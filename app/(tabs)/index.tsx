@@ -8,6 +8,7 @@ import { medicamentos } from '../../data/medicamentos';
 import { CategoriaMedicamento, Medicamento } from '../../types';
 import { FarmaciaCard } from '../../components/FarmaciaCard';
 import { MedicamentoCard } from '../../components/MedicamentoCard';
+import { useCart } from '../../contexts/CartContext';
 
 type SubTab = 'farmacias' | 'medicamentos';
 const categorias: (CategoriaMedicamento | 'Todos')[] = [
@@ -23,9 +24,8 @@ export default function HomeScreen() {
   const [busqueda, setBusqueda] = useState('');
   const [categoriaActiva, setCategoriaActiva] = useState<(typeof categorias)[number]>('Todos');
 
+  const { cartCount, addItem } = useCart();
   const enTurnoCount = farmacias.filter((f) => f.enTurno).length;
-  // TODO: reemplazar por el conteo real de items del carrito (estado global / context)
-  const cartCount = 3;
 
   const medicamentosFiltrados = useMemo(() => {
     return medicamentos.filter((m) => {
@@ -36,8 +36,7 @@ export default function HomeScreen() {
   }, [busqueda, categoriaActiva]);
 
   const handleAgregarAlCarrito = (medicamento: Medicamento) => {
-    // TODO: acá va la lógica real para agregar al carrito (context/estado global).
-    console.log('Agregar al carrito:', medicamento.nombre);
+    addItem(medicamento.id);
   };
 
   return (
