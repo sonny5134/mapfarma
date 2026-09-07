@@ -1,71 +1,86 @@
-// components/FarmaciaCard.tsx
-import { View, Text, StyleSheet } from 'react-native';
+// components/MedicamentoCard.tsx
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../constants/theme';
-import { Farmacia } from '../types';
+import { Medicamento } from '../types';
 
 interface Props {
-  farmacia: Farmacia;
+  medicamento: Medicamento;
+  onAgregar?: (medicamento: Medicamento) => void;
 }
 
-export function FarmaciaCard({ farmacia }: Props) {
+export function MedicamentoCard({ medicamento, onAgregar }: Props) {
   return (
     <View style={styles.card}>
-      <View style={styles.topRow}>
-        <View style={[styles.badge, farmacia.enTurno ? styles.badgeOn : styles.badgeOff]}>
-          <View style={[styles.dot, { backgroundColor: farmacia.enTurno ? Colors.success : Colors.textMuted }]} />
-          <Text style={[styles.badgeText, { color: farmacia.enTurno ? Colors.success : Colors.textMuted }]}>
-            {farmacia.enTurno ? 'EN TURNO' : 'SIN TURNO'}
-          </Text>
-        </View>
-        <Text style={styles.distancia}>{farmacia.distanciaMetros} m</Text>
+      <View style={styles.imagePlaceholder}>
+        {medicamento.requiereReceta && (
+          <View style={styles.recetaBadge}>
+            <Text style={styles.recetaBadgeText}>Receta</Text>
+          </View>
+        )}
       </View>
 
-      <View style={styles.middleRow}>
-        <Text style={styles.nombre}>{farmacia.nombre}</Text>
-        <Text style={styles.rating}>★ {farmacia.rating}</Text>
-      </View>
+      <Text style={styles.nombre} numberOfLines={1}>{medicamento.nombre}</Text>
+      <Text style={styles.categoria}>{medicamento.categoria}</Text>
 
-      <Text style={styles.direccion}>{farmacia.direccion} · {farmacia.barrio}</Text>
-      <Text style={styles.telefono}>{farmacia.telefono}</Text>
+      <View style={styles.bottomRow}>
+        <Text style={styles.precio}>${medicamento.precio.toLocaleString('es-AR')}</Text>
+        <Pressable
+          style={styles.addButton}
+          onPress={() => onAgregar?.(medicamento)}
+          hitSlop={8}
+        >
+          <Ionicons name="add" size={18} color={Colors.white} />
+        </Pressable>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    flex: 1,
     backgroundColor: Colors.white,
     borderRadius: Radius.md,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
+    padding: Spacing.sm,
+    margin: Spacing.xs,
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  imagePlaceholder: {
+    height: 90,
+    backgroundColor: Colors.cardBg,
+    borderRadius: Radius.sm,
+    marginBottom: Spacing.sm,
+    justifyContent: 'flex-start',
   },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-    borderRadius: Radius.full,
+  recetaBadge: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    backgroundColor: Colors.danger,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: Radius.sm,
   },
-  badgeOn: { backgroundColor: '#E7F9E7' },
-  badgeOff: { backgroundColor: '#F1F1F1' },
-  dot: { width: 6, height: 6, borderRadius: 3, marginRight: 4 },
-  badgeText: { fontSize: FontSize.xs, fontFamily: FontFamily.bold },
-  distancia: { fontSize: FontSize.md, fontFamily: FontFamily.bold, color: Colors.secondary },
+  recetaBadgeText: { color: Colors.white, fontSize: 9, fontFamily: FontFamily.bold },
 
-  middleRow: {
+  nombre: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: Colors.primary },
+  categoria: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, color: Colors.textMuted, marginTop: 2 },
+
+  bottomRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: Spacing.sm,
   },
-  nombre: { fontSize: FontSize.lg, fontFamily: FontFamily.bold, color: Colors.primary },
-  rating: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, color: Colors.textMuted },
-
-  direccion: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, color: Colors.textMuted, marginTop: 2 },
-  telefono: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: Colors.secondary, marginTop: 2 },
+  precio: { fontSize: FontSize.md, fontFamily: FontFamily.bold, color: Colors.primary },
+  addButton: {
+    width: 28,
+    height: 28,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.secondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
