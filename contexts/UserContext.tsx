@@ -7,6 +7,7 @@ interface UserContextValue {
   login: (email: string) => void;
   registrar: (nombre: string, email: string, telefono: string) => void;
   logout: () => void;
+  registrarPedido: () => void;
 }
 
 const UserContext = createContext<UserContextValue | undefined>(undefined);
@@ -43,8 +44,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const logout = () => setUsuario(null);
 
+  const registrarPedido = () => {
+    setUsuario((prev) => (prev ? { ...prev, pedidosRealizados: prev.pedidosRealizados + 1 } : prev));
+  };
+
   return (
-    <UserContext.Provider value={{ usuario, login, registrar, logout }}>
+    <UserContext.Provider value={{ usuario, login, registrar, logout, registrarPedido }}>
       {children}
     </UserContext.Provider>
   );

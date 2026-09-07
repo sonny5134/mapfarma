@@ -1,6 +1,7 @@
 // app/(tabs)/carrito.tsx
 import { useMemo } from 'react';
 import { View, Text, Image, Pressable, FlatList, StyleSheet, Alert } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
 import { useCart, getFarmaciaById, CartLineResolved } from '../../contexts/CartContext';
@@ -30,8 +31,7 @@ export default function CarritoScreen() {
       Alert.alert('Adjuntar receta', 'Esta parte todavía no está construida.');
       return;
     }
-    // TODO: navegar a /checkout cuando esté esa pantalla lista
-    Alert.alert('Checkout', 'La pantalla de checkout todavía no está construida.');
+    router.push('/checkout');
   };
 
   if (linesResolved.length === 0) {
