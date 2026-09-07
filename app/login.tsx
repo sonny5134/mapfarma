@@ -13,16 +13,19 @@ import {
 import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../constants/theme';
+import { useUser } from '../contexts/UserContext';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const { login } = useUser();
 
   const handleLogin = () => {
     // Demo: cualquier email/contraseña no vacíos entran.
     // Acá después va la llamada real a tu backend/auth.
     if (email.trim() && password.trim()) {
+      login(email.trim());
       router.replace('/(tabs)');
     }
   };
