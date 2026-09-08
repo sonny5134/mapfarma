@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { View, Text, Image, Pressable, FlatList, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
 import { useCart, getFarmaciaById, CartLineResolved } from '../../contexts/CartContext';
 
@@ -12,7 +13,16 @@ interface Grupo {
 }
 
 export default function CarritoScreen() {
-  const { linesResolved, total, requiereReceta, incrementItem, decrementItem, removeItem } = useCart();
+  const {
+    linesResolved,
+    total,
+    requiereReceta,
+    recetaImagenUri,
+    setRecetaImagen,
+    incrementItem,
+    decrementItem,
+    removeItem,
+  } = useCart();
 
   // Agrupamos las líneas por farmacia, como en el mockup
   const grupos: Grupo[] = useMemo(() => {
@@ -25,12 +35,41 @@ export default function CarritoScreen() {
     return Array.from(mapa.entries()).map(([farmaciaId, lines]) => ({ farmaciaId, lines }));
   }, [linesResolved]);
 
-  const handleContinuar = () => {
-    if (requiereReceta) {
-      // TODO: acá va el flujo real de adjuntar foto de la receta (expo-image-picker)
-      Alert.alert('Adjuntar receta', 'Esta parte todavía no está construida.');
+  const pedirPermisoYAbrir = async (fuente: 'camara' | 'galeria') => {
+    const permiso =
+      fuente === 'camara'
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permiso.granted) {
+      Alert.alert(
+        'Permiso necesario',
+        fuente === 'camara'
+          ? 'Necesitamos acceso a la cámara para sacar la foto de la receta.'
+          : 'Necesitamos acceso a tus fotos para elegir la receta.'
+      );
       return;
     }
+
+    const resultado =
+      fuente === 'camara'
+        ? await ImagePicker.launchCameraAsync({ quality: 0.6, allowsEditing: true })
+        : await ImagePicker.launchImageLibraryAsync({ quality: 0.6, allowsEditing: true });
+
+    if (!resultado.canceled && resultado.assets[0]) {
+      setRecetaImagen(resultado.assets[0].uri);
+    }
+  };
+
+  const handleAdjuntarReceta = () => {
+    Alert.alert('Adjuntar receta', '¿Cómo querés agregarla?', [
+      { text: 'Usar cámara', onPress: () => pedirPermisoYAbrir('camara') },
+      { text: 'Galería', onPress: () => pedirPermisoYAbrir('galeria') },
+      { text: 'Cancelar', style: 'cancel' },
+    ]);
+  };
+
+  const handleContinuar = () => {
     router.push('/checkout');
   };
 
@@ -135,16 +174,29 @@ export default function CarritoScreen() {
         }
       />
 
-      <Pressable style={styles.continuarButton} onPress={handleContinuar}>
-        <Ionicons
-          name={requiereReceta ? 'document-text-outline' : 'checkmark-circle-outline'}
-          size={18}
-          color={Colors.primary}
-        />
-        <Text style={styles.continuarText}>
-          {requiereReceta ? 'ADJUNTÁ LA RECETA PARA CONTINUAR' : 'CONTINUAR'}
-        </Text>
-      </Pressable>
+      {requiereReceta && !recetaImagenUri && (
+        <Pressable style={styles.continuarButton} onPress={handleAdjuntarReceta}>
+          <Ionicons name="document-text-outline" size={18} color={Colors.primary} />
+          <Text style={styles.continuarText}>ADJUNTÁ LA RECETA PARA CONTINUAR</Text>
+        </Pressable>
+      )}
+
+      {requiereReceta && recetaImagenUri && (
+        <View style={styles.recetaAdjuntaRow}>
+          <Image source={{ uri: recetaImagenUri }} style={styles.recetaThumbnail} />
+          <Text style={styles.recetaAdjuntaText}>Receta adjuntada</Text>
+          <Pressable onPress={handleAdjuntarReceta}>
+            <Text style={styles.recetaCambiarText}>Cambiar</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {(!requiereReceta || recetaImagenUri) && (
+        <Pressable style={styles.confirmarButton} onPress={handleContinuar}>
+          <Ionicons name="checkmark-circle-outline" size={18} color={Colors.white} />
+          <Text style={styles.confirmarButtonText}>CONTINUAR</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -225,4 +277,28 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
   },
   continuarText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: Colors.primary, marginLeft: Spacing.xs },
+
+  recetaAdjuntaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Radius.md,
+    padding: Spacing.sm,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.sm,
+  },
+  recetaThumbnail: { width: 36, height: 36, borderRadius: Radius.sm, marginRight: Spacing.sm },
+  recetaAdjuntaText: { flex: 1, fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: Colors.success },
+  recetaCambiarText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: Colors.secondary },
+
+  confirmarButton: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.primary,
+    paddingVertical: Spacing.md,
+    margin: Spacing.lg, marginTop: 0,
+    borderRadius: Radius.md,
+  },
+  confirmarButtonText: { color: Colors.white, fontSize: FontSize.sm, fontFamily: FontFamily.bold, marginLeft: Spacing.xs },
 });

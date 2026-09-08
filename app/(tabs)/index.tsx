@@ -90,6 +90,7 @@ export default function HomeScreen() {
 
       {subTab === 'farmacias' ? (
         <FlatList
+          key="farmacias-list"
           data={farmacias}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
@@ -113,6 +114,7 @@ export default function HomeScreen() {
         />
       ) : (
         <FlatList
+          key="medicamentos-list"
           data={medicamentosFiltrados}
           keyExtractor={(item) => item.id}
           numColumns={2}

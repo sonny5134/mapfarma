@@ -1,6 +1,6 @@
 // app/checkout.tsx
 import { useState } from 'react';
-import { View, Text, Pressable, FlatList, Alert, StyleSheet } from 'react-native';
+import { View, Text, Image, Pressable, FlatList, Alert, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../constants/theme';
 import { useCart, getFarmaciaById } from '../contexts/CartContext';
@@ -14,7 +14,7 @@ const metodosPago: { id: MetodoPago; label: string; emoji: string }[] = [
 ];
 
 export default function CheckoutScreen() {
-  const { linesResolved, total, clearCart } = useCart();
+  const { linesResolved, total, clearCart, recetaImagenUri } = useCart();
   const { registrarPedido } = useUser();
   const [metodoElegido, setMetodoElegido] = useState<MetodoPago>('efectivo');
 
@@ -84,6 +84,13 @@ export default function CheckoutScreen() {
               </Text>
             </View>
 
+            {recetaImagenUri && (
+              <View style={styles.recetaRow}>
+                <Image source={{ uri: recetaImagenUri }} style={styles.recetaThumb} />
+                <Text style={styles.recetaText}>Receta médica adjuntada ✓</Text>
+              </View>
+            )}
+
             <Text style={styles.sectionLabel}>MÉTODO DE PAGO</Text>
           </>
         }
@@ -148,6 +155,16 @@ const styles = StyleSheet.create({
   totalValue: { fontSize: FontSize.lg, fontFamily: FontFamily.bold, color: Colors.primary },
 
   sectionLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.bold, color: Colors.textMuted, marginBottom: Spacing.sm },
+  recetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E7F9E7',
+    borderRadius: Radius.md,
+    padding: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  recetaThumb: { width: 32, height: 32, borderRadius: Radius.sm, marginRight: Spacing.sm },
+  recetaText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: Colors.success },
   retiroCard: {
     backgroundColor: Colors.white,
     borderRadius: Radius.md,
