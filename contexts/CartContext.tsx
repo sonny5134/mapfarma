@@ -20,6 +20,8 @@ interface CartContextValue {
   cartCount: number; // suma de cantidades, para el badge
   total: number;
   requiereReceta: boolean;
+  recetaImagenUri: string | null;
+  setRecetaImagen: (uri: string) => void;
   addItem: (medicamentoId: string) => void;
   incrementItem: (medicamentoId: string) => void;
   decrementItem: (medicamentoId: string) => void;
@@ -31,6 +33,9 @@ const CartContext = createContext<CartContextValue | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([]);
+  const [recetaImagenUri, setRecetaImagenUri] = useState<string | null>(null);
+
+  const setRecetaImagen = (uri: string) => setRecetaImagenUri(uri);
 
   const addItem = (medicamentoId: string) => {
     setLines((prev) => {
@@ -62,7 +67,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setLines((prev) => prev.filter((l) => l.medicamentoId !== medicamentoId));
   };
 
-  const clearCart = () => setLines([]);
+  const clearCart = () => {
+    setLines([]);
+    setRecetaImagenUri(null);
+  };
 
   const linesResolved: CartLineResolved[] = useMemo(
     () =>
@@ -87,6 +95,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         cartCount,
         total,
         requiereReceta,
+        recetaImagenUri,
+        setRecetaImagen,
         addItem,
         incrementItem,
         decrementItem,

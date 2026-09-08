@@ -13,6 +13,7 @@ import {
 import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../constants/theme';
+import { useUser } from '../contexts/UserContext';
 
 export default function RegistroScreen() {
   const [nombre, setNombre] = useState('');
@@ -21,6 +22,7 @@ export default function RegistroScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const { registrar } = useUser();
 
   const handleCrearCuenta = () => {
     if (!nombre.trim() || !email.trim() || !password.trim()) {
@@ -37,6 +39,7 @@ export default function RegistroScreen() {
     }
     setError('');
     // TODO: acá va la llamada real a tu backend/auth para crear el usuario.
+    registrar(nombre.trim(), email.trim(), telefono.trim());
     router.replace('/(tabs)');
   };
 
