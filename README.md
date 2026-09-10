@@ -75,9 +75,10 @@ mapfarma/
 - [x] Theme (colores, tipografía, spacing)
 - [x] Pantalla de Login
 - [x] Navegación por tabs
-- [ ] Pantalla de Registro
-- [ ] Home con mapa y lista de farmacias
-- [ ] Catálogo de medicamentos
-- [ ] Carrito funcional
-- [ ] Checkout
-- [ ] Perfil de usuario
+- [x] Pantalla de Registro
+- [x] Home con mapa y lista de farmacias
+- [x] Catálogo de medicamentos
+- [x] Carrito funcional
+- [x] Checkout
+- [x] Perfil de usuario
+- [x] Publicar medicamento
