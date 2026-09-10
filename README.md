@@ -1,7 +1,9 @@
 # MapFarma 💊📍
 
 Aplicación móvil que usa geolocalización por GPS para mostrar farmacias de turno en **Pilar, Buenos Aires** en tiempo real, integrada con un carrito de compras digital para encargar medicamentos y retirarlos de forma presencial en el establecimiento seleccionado.
+
 ![Pantalla principal de MapFarma](docs/screenshot.png)
+
 ## Integrantes
 
 - Sonny Francisco López Villanueva — Desarrollador
@@ -73,9 +75,10 @@ mapfarma/
 - [x] Theme (colores, tipografía, spacing)
 - [x] Pantalla de Login
 - [x] Navegación por tabs
-- [ ] Pantalla de Registro
-- [ ] Home con mapa y lista de farmacias
-- [ ] Catálogo de medicamentos
-- [ ] Carrito funcional
-- [ ] Checkout
-- [ ] Perfil de usuario
+- [x] Pantalla de Registro
+- [x] Home con mapa y lista de farmacias
+- [x] Catálogo de medicamentos
+- [x] Carrito funcional
+- [x] Checkout
+- [x] Perfil de usuario
+- [x] Publicar medicamento
