@@ -1,12 +1,12 @@
 // app/(tabs)/perfil.tsx
-import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Image, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
 import { useUser } from '../../contexts/UserContext';
 
 export default function PerfilScreen() {
-  const { usuario, logout } = useUser();
+  const { usuario, misProductos, logout } = useUser();
 
   const handleCerrarSesion = () => {
     logout();
@@ -70,17 +70,39 @@ export default function PerfilScreen() {
 
       {/* Mis productos */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>MIS PRODUCTOS (0)</Text>
-        <Pressable>
+        <Text style={styles.sectionTitle}>MIS PRODUCTOS ({misProductos.length})</Text>
+        <Pressable onPress={() => router.push('/(tabs)/publicar')}>
           <Text style={styles.sectionAction}>+ Agregar</Text>
         </Pressable>
       </View>
-      <View style={styles.emptyBox}>
-        <Text style={styles.emptyBoxText}>Todavía no publicaste ningún medicamento.</Text>
-        <Pressable style={styles.primaryButton} onPress={() => router.push('/(tabs)/publicar')}>
-          <Text style={styles.primaryButtonText}>Publicar medicamento</Text>
-        </Pressable>
-      </View>
+
+      {misProductos.length === 0 ? (
+        <View style={styles.emptyBox}>
+          <Text style={styles.emptyBoxText}>Todavía no publicaste ningún medicamento.</Text>
+          <Pressable style={styles.primaryButton} onPress={() => router.push('/(tabs)/publicar')}>
+            <Text style={styles.primaryButtonText}>Publicar medicamento</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View style={styles.productosListContainer}>
+          {misProductos.map((producto) => (
+            <View key={producto.id} style={styles.productoCard}>
+              {producto.imagenUrl ? (
+                <Image source={{ uri: producto.imagenUrl }} style={styles.productoImagen} />
+              ) : (
+                <View style={styles.productoImagenPlaceholder} />
+              )}
+              <View style={styles.productoInfo}>
+                <Text style={styles.productoNombre} numberOfLines={1}>{producto.nombre}</Text>
+                <Text style={styles.productoCategoria}>{producto.categoria}</Text>
+                <Text style={styles.productoPrecio}>
+                  ${producto.precio.toLocaleString('es-AR')} · Stock: {producto.stock}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
 
       {/* Historial de pedidos */}
       <View style={styles.sectionHeader}>
@@ -198,6 +220,26 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: Spacing.md,
   },
+
+  productosListContainer: { paddingHorizontal: Spacing.lg },
+  productoCard: {
+    flexDirection: 'row',
+    backgroundColor: Colors.white,
+    borderRadius: Radius.md,
+    padding: Spacing.sm,
+    marginBottom: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  productoImagen: { width: 48, height: 48, borderRadius: Radius.sm, marginRight: Spacing.sm },
+  productoImagenPlaceholder: {
+    width: 48, height: 48, borderRadius: Radius.sm,
+    backgroundColor: Colors.cardBg, marginRight: Spacing.sm,
+  },
+  productoInfo: { flex: 1, justifyContent: 'center' },
+  productoNombre: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: Colors.primary },
+  productoCategoria: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, color: Colors.textMuted, marginTop: 1 },
+  productoPrecio: { fontSize: FontSize.xs, fontFamily: FontFamily.bold, color: Colors.text, marginTop: 2 },
   primaryButton: {
     backgroundColor: Colors.primary,
     paddingHorizontal: Spacing.lg,
