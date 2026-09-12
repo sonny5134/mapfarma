@@ -3,9 +3,11 @@ import { Tabs, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontFamily } from '../../constants/theme';
 import { useUser } from '../../contexts/UserContext';
+import { useCart } from '../../contexts/CartContext';
 
 export default function TabsLayout() {
   const { usuario } = useUser();
+  const { cartCount } = useCart();
 
   // Si no hay sesión iniciada, no dejamos ver ninguna pantalla de tabs:
   // mandamos directo al Login.
@@ -48,7 +50,7 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="bag-outline" size={size} color={color} />
           ),
-          tabBarBadge: 3, // TODO: reemplazar por la cantidad real del carrito (estado global)
+          tabBarBadge: cartCount > 0 ? cartCount : undefined,
         }}
       />
       <Tabs.Screen
