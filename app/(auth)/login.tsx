@@ -12,8 +12,8 @@ import {
 } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, FontSize, Radius, FontFamily } from '../constants/theme';
-import { useUser } from '../contexts/UserContext';
+import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
+import { useUser } from '../../contexts/UserContext';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
