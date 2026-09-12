@@ -7,13 +7,14 @@ import { Medicamento } from '../types';
 interface Props {
   medicamento: Medicamento;
   onAgregar?: (medicamento: Medicamento) => void;
+  onPress?: (medicamento: Medicamento) => void;
 }
 
-export function MedicamentoCard({ medicamento, onAgregar }: Props) {
+export function MedicamentoCard({ medicamento, onAgregar, onPress }: Props) {
   const agotado = medicamento.stock === 0;
 
   return (
-    <View style={styles.card}>
+    <Pressable style={styles.card} onPress={() => onPress?.(medicamento)}>
       <View style={styles.imagePlaceholder}>
         {medicamento.requiereReceta && (
           <View style={styles.recetaBadge}>
@@ -46,7 +47,7 @@ export function MedicamentoCard({ medicamento, onAgregar }: Props) {
           </Pressable>
         </View>
       )}
-    </View>
+    </Pressable>
   );
 }
 
