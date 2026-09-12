@@ -50,9 +50,6 @@ export default function CheckoutScreen() {
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <>
-            <Pressable onPress={() => router.back()} hitSlop={12}>
-              <Text style={styles.backLink}>← Volver</Text>
-            </Pressable>
             <Text style={styles.title}>Checkout</Text>
             <Text style={styles.subtitle}>Confirmá tu pedido y elegí cómo pagar.</Text>
 

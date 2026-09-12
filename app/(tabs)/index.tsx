@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { View, Text, TextInput, FlatList, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
 import { useFarmacias } from '../../hooks/useFarmacias';
 import { useMedicamentos } from '../../hooks/useMedicamentos';
@@ -24,6 +25,7 @@ export default function HomeScreen() {
   const [busqueda, setBusqueda] = useState('');
   const [categoriaActiva, setCategoriaActiva] = useState<(typeof categorias)[number]>('Todos');
 
+  const router = useRouter();
   const { cartCount, addItem } = useCart();
   const { farmacias, cargando: cargandoFarmacias, refrescar: refrescarFarmacias } = useFarmacias();
   const { medicamentos, cargando: cargandoMedicamentos, refrescar: refrescarMedicamentos } = useMedicamentos();
@@ -39,6 +41,10 @@ export default function HomeScreen() {
 
   const handleAgregarAlCarrito = (medicamento: Medicamento) => {
     addItem(medicamento.id);
+  };
+
+  const handleVerDetalle = (medicamento: Medicamento) => {
+    router.push(`/medicamento/${medicamento.id}`);
   };
 
   return (
@@ -175,7 +181,7 @@ export default function HomeScreen() {
             <Text style={styles.vacioText}>No encontramos medicamentos con ese filtro.</Text>
           }
           renderItem={({ item }) => (
-            <MedicamentoCard medicamento={item} onAgregar={handleAgregarAlCarrito} />
+            <MedicamentoCard medicamento={item} onAgregar={handleAgregarAlCarrito} onPress={handleVerDetalle} />
           )}
         />
       )}
