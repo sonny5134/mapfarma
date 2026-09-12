@@ -10,6 +10,8 @@ interface Props {
 }
 
 export function MedicamentoCard({ medicamento, onAgregar }: Props) {
+  const agotado = medicamento.stock === 0;
+
   return (
     <View style={styles.card}>
       <View style={styles.imagePlaceholder}>
@@ -18,21 +20,32 @@ export function MedicamentoCard({ medicamento, onAgregar }: Props) {
             <Text style={styles.recetaBadgeText}>Receta</Text>
           </View>
         )}
+        {/* Conditional rendering: solo se muestra cuando no hay stock */}
+        {agotado && (
+          <View style={styles.agotadoOverlay}>
+            <Text style={styles.agotadoOverlayText}>Sin stock</Text>
+          </View>
+        )}
       </View>
 
       <Text style={styles.nombre} numberOfLines={1}>{medicamento.nombre}</Text>
       <Text style={styles.categoria}>{medicamento.categoria}</Text>
 
-      <View style={styles.bottomRow}>
-        <Text style={styles.precio}>${medicamento.precio.toLocaleString('es-AR')}</Text>
-        <Pressable
-          style={styles.addButton}
-          onPress={() => onAgregar?.(medicamento)}
-          hitSlop={8}
-        >
-          <Ionicons name="add" size={18} color={Colors.white} />
-        </Pressable>
-      </View>
+      {/* Conditional rendering: precio normal vs. aviso de agotado */}
+      {agotado ? (
+        <Text style={styles.agotadoLabel}>Agotado</Text>
+      ) : (
+        <View style={styles.bottomRow}>
+          <Text style={styles.precio}>${medicamento.precio.toLocaleString('es-AR')}</Text>
+          <Pressable
+            style={styles.addButton}
+            onPress={() => onAgregar?.(medicamento)}
+            hitSlop={8}
+          >
+            <Ionicons name="add" size={18} color={Colors.white} />
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
@@ -64,6 +77,26 @@ const styles = StyleSheet.create({
     borderRadius: Radius.sm,
   },
   recetaBadgeText: { color: Colors.white, fontSize: 9, fontFamily: FontFamily.bold },
+
+  agotadoOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.sm,
+  },
+  agotadoOverlayText: {
+    color: Colors.danger,
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.bold,
+    textTransform: 'uppercase',
+  },
+  agotadoLabel: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.bold,
+    color: Colors.danger,
+    marginTop: Spacing.sm,
+  },
 
   nombre: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: Colors.primary },
   categoria: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, color: Colors.textMuted, marginTop: 2 },
