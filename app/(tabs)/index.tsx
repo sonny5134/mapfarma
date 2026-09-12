@@ -1,10 +1,10 @@
 // app/(tabs)/index.tsx
 import { useMemo, useState } from 'react';
-import { View, Text, TextInput, FlatList, Pressable, StyleSheet } from 'react-native';
+import { View, Text, TextInput, FlatList, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
-import { farmacias } from '../../data/farmacias';
-import { medicamentos } from '../../data/medicamentos';
+import { useFarmacias } from '../../hooks/useFarmacias';
+import { useMedicamentos } from '../../hooks/useMedicamentos';
 import { CategoriaMedicamento, Medicamento } from '../../types';
 import { FarmaciaCard } from '../../components/FarmaciaCard';
 import { MedicamentoCard } from '../../components/MedicamentoCard';
@@ -25,6 +25,8 @@ export default function HomeScreen() {
   const [categoriaActiva, setCategoriaActiva] = useState<(typeof categorias)[number]>('Todos');
 
   const { cartCount, addItem } = useCart();
+  const { farmacias, cargando: cargandoFarmacias, refrescar: refrescarFarmacias } = useFarmacias();
+  const { medicamentos, cargando: cargandoMedicamentos, refrescar: refrescarMedicamentos } = useMedicamentos();
   const enTurnoCount = farmacias.filter((f) => f.enTurno).length;
 
   const medicamentosFiltrados = useMemo(() => {
@@ -33,7 +35,7 @@ export default function HomeScreen() {
       const coincideBusqueda = m.nombre.toLowerCase().includes(busqueda.toLowerCase());
       return coincideCategoria && coincideBusqueda;
     });
-  }, [busqueda, categoriaActiva]);
+  }, [busqueda, categoriaActiva, medicamentos]);
 
   const handleAgregarAlCarrito = (medicamento: Medicamento) => {
     addItem(medicamento.id);
@@ -89,29 +91,40 @@ export default function HomeScreen() {
       </View>
 
       {subTab === 'farmacias' ? (
-        <FlatList
-          key="farmacias-list"
-          data={farmacias}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          ListHeaderComponent={
-            <>
-              {/* Mapa estilizado (placeholder visual, sin GPS real todavía) */}
-              <View style={styles.mapPlaceholder}>
-                <Ionicons name="map-outline" size={28} color={Colors.textMuted} />
-                <Text style={styles.mapPlaceholderText}>Mapa de farmacias (próximamente con GPS real)</Text>
-              </View>
+        cargandoFarmacias ? (
+          <ActivityIndicator style={styles.loader} size="large" color={Colors.primary} />
+        ) : (
+          <FlatList
+            key="farmacias-list"
+            data={farmacias}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            onRefresh={refrescarFarmacias}
+            refreshing={cargandoFarmacias}
+            ListHeaderComponent={
+              <>
+                {/* Mapa estilizado (placeholder visual, sin GPS real todavía) */}
+                <View style={styles.mapPlaceholder}>
+                  <Ionicons name="map-outline" size={28} color={Colors.textMuted} />
+                  <Text style={styles.mapPlaceholderText}>Mapa de farmacias (próximamente con GPS real)</Text>
+                </View>
 
-              <View style={styles.turnoRow}>
-                <View style={styles.turnoDot} />
-                <Text style={styles.turnoText}>
-                  {enTurnoCount} de {farmacias.length} en turno
-                </Text>
-              </View>
-            </>
-          }
-          renderItem={({ item }) => <FarmaciaCard farmacia={item} />}
-        />
+                <View style={styles.turnoRow}>
+                  <View style={styles.turnoDot} />
+                  <Text style={styles.turnoText}>
+                    {enTurnoCount} de {farmacias.length} en turno
+                  </Text>
+                </View>
+              </>
+            }
+            ListEmptyComponent={
+              <Text style={styles.vacioText}>No hay farmacias disponibles en este momento.</Text>
+            }
+            renderItem={({ item }) => <FarmaciaCard farmacia={item} />}
+          />
+        )
+      ) : cargandoMedicamentos ? (
+        <ActivityIndicator style={styles.loader} size="large" color={Colors.primary} />
       ) : (
         <FlatList
           key="medicamentos-list"
@@ -119,6 +132,8 @@ export default function HomeScreen() {
           keyExtractor={(item) => item.id}
           numColumns={2}
           contentContainerStyle={styles.listContent}
+          onRefresh={refrescarMedicamentos}
+          refreshing={cargandoMedicamentos}
           ListHeaderComponent={
             <>
               <View style={styles.searchBox}>
@@ -155,6 +170,9 @@ export default function HomeScreen() {
                 )}
               />
             </>
+          }
+          ListEmptyComponent={
+            <Text style={styles.vacioText}>No encontramos medicamentos con ese filtro.</Text>
           }
           renderItem={({ item }) => (
             <MedicamentoCard medicamento={item} onAgregar={handleAgregarAlCarrito} />
@@ -221,6 +239,14 @@ const styles = StyleSheet.create({
   },
 
   listContent: { padding: Spacing.lg },
+  loader: { flex: 1, justifyContent: 'center' },
+  vacioText: {
+    textAlign: 'center',
+    color: Colors.textMuted,
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.regular,
+    marginTop: Spacing.xl,
+  },
 
   mapPlaceholder: {
     height: 160,
