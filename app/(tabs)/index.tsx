@@ -10,6 +10,7 @@ import { CategoriaMedicamento, Medicamento } from '../../types';
 import { FarmaciaCard } from '../../components/FarmaciaCard';
 import { MedicamentoCard } from '../../components/MedicamentoCard';
 import { useCart } from '../../contexts/CartContext';
+import { useUser } from '../../contexts/UserContext';
 
 type SubTab = 'farmacias' | 'medicamentos';
 const categorias: (CategoriaMedicamento | 'Todos')[] = [
@@ -27,6 +28,7 @@ export default function HomeScreen() {
 
   const router = useRouter();
   const { cartCount, addItem } = useCart();
+  const { usuario } = useUser();
   const { farmacias, cargando: cargandoFarmacias, refrescar: refrescarFarmacias } = useFarmacias();
   const { medicamentos, cargando: cargandoMedicamentos, refrescar: refrescarMedicamentos } = useMedicamentos();
   const enTurnoCount = farmacias.filter((f) => f.enTurno).length;
@@ -57,6 +59,10 @@ export default function HomeScreen() {
           </View>
           <View>
             <Text style={styles.appName}>MapFarma</Text>
+            {/* Estado global: el nombre viene del UserContext, se muestra acá y también en Perfil */}
+            <Text style={styles.greeting}>
+              {usuario ? `Hola, ${usuario.nombre} 👋` : 'Bienvenido'}
+            </Text>
             <View style={styles.locationRow}>
               <Ionicons name="location-sharp" size={12} color={Colors.textMuted} />
               <Text style={styles.locationText}>Pilar, Buenos Aires</Text>
@@ -211,6 +217,7 @@ const styles = StyleSheet.create({
     marginRight: Spacing.sm,
   },
   appName: { fontSize: FontSize.lg, fontFamily: FontFamily.bold, color: Colors.primary },
+  greeting: { fontSize: FontSize.xs, fontFamily: FontFamily.bold, color: Colors.secondary, marginTop: 1 },
   locationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
   locationText: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, color: Colors.textMuted, marginLeft: 2 },
 
