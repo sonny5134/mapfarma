@@ -1,13 +1,13 @@
-// hooks/useFarmacias.ts
-import { useState, useEffect, useCallback } from 'react';
+// hooks/useFarmacias.ts — Sincronización en tiempo real con Firestore
+import { useEffect, useState } from 'react';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db } from '../services/firebase';
 import { Farmacia } from '../types';
-import { farmacias as FARMACIAS_MOCK } from '../data/farmacias';
 
 interface UseFarmaciasResult {
   farmacias: Farmacia[];
   cargando: boolean;
   error: string | null;
-  refrescar: () => void;
 }
 
 export function useFarmacias(): UseFarmaciasResult {
@@ -15,19 +15,28 @@ export function useFarmacias(): UseFarmaciasResult {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const cargar = useCallback(() => {
-    setCargando(true);
-    setError(null);
-    setTimeout(() => {
-      // TODO: reemplazar por fetch/consulta real (backend propio o Firebase) en clases futuras.
-      setFarmacias(FARMACIAS_MOCK);
-      setCargando(false);
-    }, 500);
+  useEffect(() => {
+    const q = query(collection(db, 'farmacias'), orderBy('nombre', 'asc'));
+
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const data = snap.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<Farmacia, 'id'>),
+        }));
+        setFarmacias(data);
+        setCargando(false);
+        setError(null);
+      },
+      (err) => {
+        setError(err.message);
+        setCargando(false);
+      }
+    );
+
+    return unsub;
   }, []);
 
-  useEffect(() => {
-    cargar();
-  }, [cargar]);
-
-  return { farmacias, cargando, error, refrescar: cargar };
+  return { farmacias, cargando, error };
 }

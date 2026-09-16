@@ -5,16 +5,17 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
-import { useCart, getFarmaciaById, CartLineResolved } from '../../contexts/CartContext';
+import { useCart, CartLine } from '../../contexts/CartContext';
+import { useFarmacias } from '../../hooks/useFarmacias';
 
 interface Grupo {
   farmaciaId: string;
-  lines: CartLineResolved[];
+  lines: CartLine[];
 }
 
 export default function CarritoScreen() {
   const {
-    linesResolved,
+    lines,
     total,
     requiereReceta,
     recetaImagenUri,
@@ -23,17 +24,20 @@ export default function CarritoScreen() {
     decrementItem,
     removeItem,
   } = useCart();
+  // Para mostrar nombre/dirección de la farmacia de cada grupo, usamos la lista
+  // en tiempo real de Firestore y buscamos por id (ya la tenemos cargada en memoria).
+  const { farmacias } = useFarmacias();
 
   // Agrupamos las líneas por farmacia, como en el mockup
   const grupos: Grupo[] = useMemo(() => {
-    const mapa = new Map<string, CartLineResolved[]>();
-    linesResolved.forEach((line) => {
+    const mapa = new Map<string, CartLine[]>();
+    lines.forEach((line) => {
       const key = line.medicamento.farmaciaId;
       if (!mapa.has(key)) mapa.set(key, []);
       mapa.get(key)!.push(line);
     });
     return Array.from(mapa.entries()).map(([farmaciaId, lines]) => ({ farmaciaId, lines }));
-  }, [linesResolved]);
+  }, [lines]);
 
   const pedirPermisoYAbrir = async (fuente: 'camara' | 'galeria') => {
     const permiso =
@@ -73,7 +77,7 @@ export default function CarritoScreen() {
     router.push('/checkout');
   };
 
-  if (linesResolved.length === 0) {
+  if (lines.length === 0) {
     return (
       <View style={styles.emptyContainer}>
         <Ionicons name="bag-outline" size={48} color={Colors.textMuted} />
@@ -95,7 +99,7 @@ export default function CarritoScreen() {
         keyExtractor={(g) => g.farmaciaId}
         contentContainerStyle={styles.listContent}
         renderItem={({ item: grupo }) => {
-          const farmacia = getFarmaciaById(grupo.farmaciaId);
+          const farmacia = farmacias.find((f) => f.id === grupo.farmaciaId);
           return (
             <View style={styles.grupo}>
               <View style={styles.grupoHeader}>
@@ -109,7 +113,7 @@ export default function CarritoScreen() {
               </View>
 
               {grupo.lines.map((line) => (
-                <View key={line.medicamentoId} style={styles.itemRow}>
+                <View key={line.medicamento.id} style={styles.itemRow}>
                   <View style={styles.itemImagePlaceholder} />
                   <View style={styles.itemInfo}>
                     <Text style={styles.itemNombre} numberOfLines={1}>
@@ -123,14 +127,14 @@ export default function CarritoScreen() {
                   <View style={styles.stepper}>
                     <Pressable
                       style={styles.stepperButton}
-                      onPress={() => decrementItem(line.medicamentoId)}
+                      onPress={() => decrementItem(line.medicamento.id)}
                     >
                       <Ionicons name="remove" size={16} color={Colors.white} />
                     </Pressable>
                     <Text style={styles.stepperCantidad}>{line.cantidad}</Text>
                     <Pressable
                       style={styles.stepperButton}
-                      onPress={() => incrementItem(line.medicamentoId)}
+                      onPress={() => incrementItem(line.medicamento.id)}
                     >
                       <Ionicons name="add" size={16} color={Colors.white} />
                     </Pressable>
@@ -138,7 +142,7 @@ export default function CarritoScreen() {
 
                   <Pressable
                     style={styles.removeButton}
-                    onPress={() => removeItem(line.medicamentoId)}
+                    onPress={() => removeItem(line.medicamento.id)}
                     hitSlop={8}
                   >
                     <Ionicons name="close" size={16} color={Colors.danger} />
@@ -151,8 +155,8 @@ export default function CarritoScreen() {
         ListFooterComponent={
           <View style={styles.resumen}>
             <Text style={styles.resumenTitulo}>RESUMEN</Text>
-            {linesResolved.map((line) => (
-              <View key={line.medicamentoId} style={styles.resumenRow}>
+            {lines.map((line) => (
+              <View key={line.medicamento.id} style={styles.resumenRow}>
                 <Text style={styles.resumenItem}>
                   {line.medicamento.nombre} × {line.cantidad}
                 </Text>
