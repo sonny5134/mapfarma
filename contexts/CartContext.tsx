@@ -1,28 +1,20 @@
 // contexts/CartContext.tsx
 import { createContext, useContext, useState, ReactNode, useMemo } from 'react';
-import { medicamentos } from '../data/medicamentos';
-import { farmacias } from '../data/farmacias';
 import { Medicamento } from '../types';
 
-interface CartLine {
-  medicamentoId: string;
-  cantidad: number;
-}
-
-// Lo que le devolvemos a la UI: la línea del carrito + el medicamento completo ya resuelto
-export interface CartLineResolved extends CartLine {
+export interface CartLine {
   medicamento: Medicamento;
+  cantidad: number;
 }
 
 interface CartContextValue {
   lines: CartLine[];
-  linesResolved: CartLineResolved[];
   cartCount: number; // suma de cantidades, para el badge
   total: number;
   requiereReceta: boolean;
   recetaImagenUri: string | null;
   setRecetaImagen: (uri: string) => void;
-  addItem: (medicamentoId: string) => void;
+  addItem: (medicamento: Medicamento) => void;
   incrementItem: (medicamentoId: string) => void;
   decrementItem: (medicamentoId: string) => void;
   removeItem: (medicamentoId: string) => void;
@@ -37,34 +29,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const setRecetaImagen = (uri: string) => setRecetaImagenUri(uri);
 
-  const addItem = (medicamentoId: string) => {
+  // Ahora recibe el medicamento COMPLETO (ya lo tenemos a mano en la Home o el
+  // Detalle, que lo trajeron de Firestore) en vez de solo el id + una búsqueda
+  // posterior en un mock local que ya no existe.
+  const addItem = (medicamento: Medicamento) => {
     setLines((prev) => {
-      const existe = prev.find((l) => l.medicamentoId === medicamentoId);
+      const existe = prev.find((l) => l.medicamento.id === medicamento.id);
       if (existe) {
         return prev.map((l) =>
-          l.medicamentoId === medicamentoId ? { ...l, cantidad: l.cantidad + 1 } : l
+          l.medicamento.id === medicamento.id ? { ...l, cantidad: l.cantidad + 1 } : l
         );
       }
-      return [...prev, { medicamentoId, cantidad: 1 }];
+      return [...prev, { medicamento, cantidad: 1 }];
     });
   };
 
   const incrementItem = (medicamentoId: string) => {
     setLines((prev) =>
-      prev.map((l) => (l.medicamentoId === medicamentoId ? { ...l, cantidad: l.cantidad + 1 } : l))
+      prev.map((l) => (l.medicamento.id === medicamentoId ? { ...l, cantidad: l.cantidad + 1 } : l))
     );
   };
 
   const decrementItem = (medicamentoId: string) => {
     setLines((prev) =>
       prev
-        .map((l) => (l.medicamentoId === medicamentoId ? { ...l, cantidad: l.cantidad - 1 } : l))
+        .map((l) => (l.medicamento.id === medicamentoId ? { ...l, cantidad: l.cantidad - 1 } : l))
         .filter((l) => l.cantidad > 0)
     );
   };
 
   const removeItem = (medicamentoId: string) => {
-    setLines((prev) => prev.filter((l) => l.medicamentoId !== medicamentoId));
+    setLines((prev) => prev.filter((l) => l.medicamento.id !== medicamentoId));
   };
 
   const clearCart = () => {
@@ -72,26 +67,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setRecetaImagenUri(null);
   };
 
-  const linesResolved: CartLineResolved[] = useMemo(
-    () =>
-      lines
-        .map((l) => {
-          const medicamento = medicamentos.find((m) => m.id === l.medicamentoId);
-          return medicamento ? { ...l, medicamento } : null;
-        })
-        .filter((l): l is CartLineResolved => l !== null),
+  const cartCount = lines.reduce((acc, l) => acc + l.cantidad, 0);
+  const total = useMemo(
+    () => lines.reduce((acc, l) => acc + l.medicamento.precio * l.cantidad, 0),
     [lines]
   );
-
-  const cartCount = lines.reduce((acc, l) => acc + l.cantidad, 0);
-  const total = linesResolved.reduce((acc, l) => acc + l.medicamento.precio * l.cantidad, 0);
-  const requiereReceta = linesResolved.some((l) => l.medicamento.requiereReceta);
+  const requiereReceta = lines.some((l) => l.medicamento.requiereReceta);
 
   return (
     <CartContext.Provider
       value={{
         lines,
-        linesResolved,
         cartCount,
         total,
         requiereReceta,
@@ -115,9 +101,4 @@ export function useCart() {
     throw new Error('useCart tiene que usarse dentro de un <CartProvider>');
   }
   return context;
-}
-
-// Útil para agrupar las líneas del carrito por farmacia en la UI (como en el mockup)
-export function getFarmaciaById(id: string) {
-  return farmacias.find((f) => f.id === id);
 }

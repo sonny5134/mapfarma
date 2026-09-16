@@ -1,32 +1,46 @@
-// hooks/useMedicamento.ts
-import { useState, useEffect, useCallback } from 'react';
+// hooks/useMedicamento.ts — Lectura individual (una sola vez, no en tiempo real)
+import { useEffect, useState } from 'react';
+import { medicamentosService } from '../services/firestoreMedicamentos';
 import { Medicamento } from '../types';
-import { medicamentos as MEDICAMENTOS_MOCK } from '../data/medicamentos';
 
 interface UseMedicamentoResult {
-  medicamento: Medicamento | undefined;
+  medicamento: Medicamento | null;
   cargando: boolean;
+  error: string | null;
 }
 
-// DetalleScreen (lee el id de la URL) -> useMedicamento(id) -> mockData
-// En la Clase 5 el TODO de abajo se reemplaza por una consulta real a Firebase,
-// sin tener que tocar la pantalla de detalle.
 export function useMedicamento(id: string | undefined): UseMedicamentoResult {
-  const [medicamento, setMedicamento] = useState<Medicamento | undefined>(undefined);
+  const [medicamento, setMedicamento] = useState<Medicamento | null>(null);
   const [cargando, setCargando] = useState(true);
-
-  const cargar = useCallback(() => {
-    setCargando(true);
-    setTimeout(() => {
-      // TODO: reemplazar por fetch a Firebase usando el id, en la Clase 5.
-      setMedicamento(MEDICAMENTOS_MOCK.find((m) => m.id === id));
-      setCargando(false);
-    }, 300);
-  }, [id]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    cargar();
-  }, [cargar]);
+    if (!id) {
+      setCargando(false);
+      return;
+    }
 
-  return { medicamento, cargando };
+    // Flag local para no actualizar el estado si el usuario ya navegó hacia
+    // atrás y el componente se desmontó antes de que la promesa resuelva.
+    let mounted = true;
+
+    setCargando(true);
+    medicamentosService
+      .getById(id)
+      .then((data) => {
+        if (mounted) setMedicamento(data);
+      })
+      .catch((err) => {
+        if (mounted) setError(err.message);
+      })
+      .finally(() => {
+        if (mounted) setCargando(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [id]);
+
+  return { medicamento, cargando, error };
 }

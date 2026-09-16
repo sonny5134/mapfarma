@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { View, Text, Image, Pressable, FlatList, Alert, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../constants/theme';
-import { useCart, getFarmaciaById } from '../contexts/CartContext';
+import { useCart } from '../contexts/CartContext';
+import { useFarmacias } from '../hooks/useFarmacias';
 import { useUser } from '../contexts/UserContext';
 import { MetodoPago } from '../types';
 
@@ -14,14 +15,15 @@ const metodosPago: { id: MetodoPago; label: string; emoji: string }[] = [
 ];
 
 export default function CheckoutScreen() {
-  const { linesResolved, total, clearCart, recetaImagenUri } = useCart();
+  const { lines, total, clearCart, recetaImagenUri } = useCart();
+  const { farmacias } = useFarmacias();
   const { registrarPedido } = useUser();
   const [metodoElegido, setMetodoElegido] = useState<MetodoPago>('efectivo');
 
   // Simplificación: asumimos que el pedido se retira en la farmacia de la primera línea.
   // TODO: si el carrito tiene productos de más de una farmacia, este flujo debería
   // separar el pedido en uno por farmacia. Por ahora, un solo punto de retiro.
-  const farmaciaRetiro = linesResolved[0] ? getFarmaciaById(linesResolved[0].medicamento.farmaciaId) : undefined;
+  const farmaciaRetiro = lines[0] ? farmacias.find((f) => f.id === lines[0].medicamento.farmaciaId) : undefined;
 
   const handleConfirmar = () => {
     registrarPedido();
@@ -31,7 +33,7 @@ export default function CheckoutScreen() {
     ]);
   };
 
-  if (linesResolved.length === 0) {
+  if (lines.length === 0) {
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyText}>No hay productos para pagar.</Text>
@@ -55,8 +57,8 @@ export default function CheckoutScreen() {
 
             <View style={styles.resumenCard}>
               <Text style={styles.resumenTitulo}>RESUMEN DEL PEDIDO</Text>
-              {linesResolved.map((line) => (
-                <View key={line.medicamentoId} style={styles.resumenRow}>
+              {lines.map((line) => (
+                <View key={line.medicamento.id} style={styles.resumenRow}>
                   <View style={styles.resumenImagePlaceholder} />
                   <Text style={styles.resumenNombre} numberOfLines={1}>
                     {line.medicamento.nombre}

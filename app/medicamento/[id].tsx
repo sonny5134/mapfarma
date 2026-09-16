@@ -1,25 +1,38 @@
 // app/medicamento/[id].tsx
-import { View, Text, Pressable, ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
 import { useMedicamento } from '../../hooks/useMedicamento';
-import { getFarmaciaById } from '../../contexts/CartContext';
+import { useFarmacia } from '../../hooks/useFarmacia';
 import { useCart } from '../../contexts/CartContext';
+import { SkeletonList } from '../../components/SkeletonList';
+import { ErrorView } from '../../components/ErrorView';
 
 export default function DetalleMedicamentoScreen() {
   // Buenas prácticas: solo viaja el ID por la ruta, el objeto completo se
-  // recupera desde la fuente de datos (mockData hoy, Firebase en la Clase 5).
+  // recupera desde Firestore (antes era mockData, la pantalla no cambió).
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { medicamento, cargando } = useMedicamento(id);
-  const { linesResolved, addItem } = useCart();
+  const { medicamento, cargando, error } = useMedicamento(id);
+  const { farmacia } = useFarmacia(medicamento?.farmaciaId);
+  const { lines, addItem } = useCart();
 
-  const enCarrito = linesResolved.find((l) => l.medicamentoId === id)?.cantidad ?? 0;
+  const enCarrito = lines.find((l) => l.medicamento.id === id)?.cantidad ?? 0;
 
   if (cargando) {
     return (
       <>
         <Stack.Screen options={{ title: 'Cargando...' }} />
-        <ActivityIndicator style={styles.loader} size="large" color={Colors.primary} />
+        <SkeletonList cantidad={1} alto={220} />
+        <SkeletonList cantidad={3} alto={20} />
+      </>
+    );
+  }
+
+  if (error) {
+    return (
+      <>
+        <Stack.Screen options={{ title: 'Error' }} />
+        <ErrorView mensaje={`No pudimos cargar el medicamento: ${error}`} />
       </>
     );
   }
@@ -35,7 +48,6 @@ export default function DetalleMedicamentoScreen() {
     );
   }
 
-  const farmacia = getFarmaciaById(medicamento.farmaciaId);
   const agotado = medicamento.stock === 0;
 
   return (
@@ -103,7 +115,7 @@ export default function DetalleMedicamentoScreen() {
           <Pressable
             style={[styles.addButton, agotado && styles.addButtonDisabled]}
             disabled={agotado}
-            onPress={() => addItem(medicamento.id)}
+            onPress={() => addItem(medicamento)}
           >
             <Text style={styles.addButtonText}>
               {agotado
@@ -121,7 +133,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   scrollContent: { paddingBottom: Spacing.xxl },
 
-  loader: { flex: 1, justifyContent: 'center', backgroundColor: Colors.background },
   notFound: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.lg },
   notFoundText: { fontSize: FontSize.md, fontFamily: FontFamily.regular, color: Colors.textMuted },
 

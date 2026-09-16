@@ -1,6 +1,6 @@
 // app/(tabs)/index.tsx
 import { useMemo, useState } from 'react';
-import { View, Text, TextInput, FlatList, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TextInput, FlatList, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
@@ -9,6 +9,8 @@ import { useMedicamentos } from '../../hooks/useMedicamentos';
 import { CategoriaMedicamento, Medicamento } from '../../types';
 import { FarmaciaCard } from '../../components/FarmaciaCard';
 import { MedicamentoCard } from '../../components/MedicamentoCard';
+import { SkeletonList } from '../../components/SkeletonList';
+import { ErrorView } from '../../components/ErrorView';
 import { useCart } from '../../contexts/CartContext';
 import { useUser } from '../../contexts/UserContext';
 
@@ -29,8 +31,10 @@ export default function HomeScreen() {
   const router = useRouter();
   const { cartCount, addItem } = useCart();
   const { usuario } = useUser();
-  const { farmacias, cargando: cargandoFarmacias, refrescar: refrescarFarmacias } = useFarmacias();
-  const { medicamentos, cargando: cargandoMedicamentos, refrescar: refrescarMedicamentos } = useMedicamentos();
+  // Ambos hooks usan onSnapshot: la lista se actualiza sola si alguien edita
+  // un documento desde la consola de Firebase, sin pull-to-refresh manual.
+  const { farmacias, cargando: cargandoFarmacias, error: errorFarmacias } = useFarmacias();
+  const { medicamentos, cargando: cargandoMedicamentos, error: errorMedicamentos } = useMedicamentos();
   const enTurnoCount = farmacias.filter((f) => f.enTurno).length;
 
   const medicamentosFiltrados = useMemo(() => {
@@ -42,7 +46,7 @@ export default function HomeScreen() {
   }, [busqueda, categoriaActiva, medicamentos]);
 
   const handleAgregarAlCarrito = (medicamento: Medicamento) => {
-    addItem(medicamento.id);
+    addItem(medicamento);
   };
 
   const handleVerDetalle = (medicamento: Medicamento) => {
@@ -59,7 +63,6 @@ export default function HomeScreen() {
           </View>
           <View>
             <Text style={styles.appName}>MapFarma</Text>
-            {/* Estado global: el nombre viene del UserContext, se muestra acá y también en Perfil */}
             <Text style={styles.greeting}>
               {usuario ? `Hola, ${usuario.nombre} 👋` : 'Bienvenido'}
             </Text>
@@ -82,19 +85,13 @@ export default function HomeScreen() {
 
       {/* Sub-tabs Farmacias / Medicamentos */}
       <View style={styles.subTabRow}>
-        <Pressable
-          style={styles.subTabButton}
-          onPress={() => setSubTab('farmacias')}
-        >
+        <Pressable style={styles.subTabButton} onPress={() => setSubTab('farmacias')}>
           <Text style={[styles.subTabText, subTab === 'farmacias' && styles.subTabTextActive]}>
             Farmacias
           </Text>
           {subTab === 'farmacias' && <View style={styles.subTabIndicator} />}
         </Pressable>
-        <Pressable
-          style={styles.subTabButton}
-          onPress={() => setSubTab('medicamentos')}
-        >
+        <Pressable style={styles.subTabButton} onPress={() => setSubTab('medicamentos')}>
           <Text style={[styles.subTabText, subTab === 'medicamentos' && styles.subTabTextActive]}>
             Medicamentos
           </Text>
@@ -104,18 +101,17 @@ export default function HomeScreen() {
 
       {subTab === 'farmacias' ? (
         cargandoFarmacias ? (
-          <ActivityIndicator style={styles.loader} size="large" color={Colors.primary} />
+          <SkeletonList cantidad={4} alto={90} />
+        ) : errorFarmacias ? (
+          <ErrorView mensaje={`No pudimos cargar las farmacias: ${errorFarmacias}`} />
         ) : (
           <FlatList
             key="farmacias-list"
             data={farmacias}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
-            onRefresh={refrescarFarmacias}
-            refreshing={cargandoFarmacias}
             ListHeaderComponent={
               <>
-                {/* Mapa estilizado (placeholder visual, sin GPS real todavía) */}
                 <View style={styles.mapPlaceholder}>
                   <Ionicons name="map-outline" size={28} color={Colors.textMuted} />
                   <Text style={styles.mapPlaceholderText}>Mapa de farmacias (próximamente con GPS real)</Text>
@@ -130,13 +126,15 @@ export default function HomeScreen() {
               </>
             }
             ListEmptyComponent={
-              <Text style={styles.vacioText}>No hay farmacias disponibles en este momento.</Text>
+              <Text style={styles.vacioText}>No hay farmacias cargadas todavía.</Text>
             }
             renderItem={({ item }) => <FarmaciaCard farmacia={item} />}
           />
         )
       ) : cargandoMedicamentos ? (
-        <ActivityIndicator style={styles.loader} size="large" color={Colors.primary} />
+        <SkeletonList cantidad={6} alto={140} />
+      ) : errorMedicamentos ? (
+        <ErrorView mensaje={`No pudimos cargar los medicamentos: ${errorMedicamentos}`} />
       ) : (
         <FlatList
           key="medicamentos-list"
@@ -144,8 +142,6 @@ export default function HomeScreen() {
           keyExtractor={(item) => item.id}
           numColumns={2}
           contentContainerStyle={styles.listContent}
-          onRefresh={refrescarMedicamentos}
-          refreshing={cargandoMedicamentos}
           ListHeaderComponent={
             <>
               <View style={styles.searchBox}>
@@ -252,7 +248,6 @@ const styles = StyleSheet.create({
   },
 
   listContent: { padding: Spacing.lg },
-  loader: { flex: 1, justifyContent: 'center' },
   vacioText: {
     textAlign: 'center',
     color: Colors.textMuted,
