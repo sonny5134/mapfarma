@@ -1,5 +1,5 @@
 // app/login.tsx
-import { useState } from 'react';
+import { useState } from "react";
 import {
   View,
   Text,
@@ -9,31 +9,47 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-} from 'react-native';
-import { Link, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
-import { useUser } from '../../contexts/UserContext';
+  ActivityIndicator,
+} from "react-native";
+import { Link, router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  Colors,
+  Spacing,
+  FontSize,
+  Radius,
+  FontFamily,
+} from "../../constants/theme";
+import { useAuthStore } from "../../store/auth/authStore";
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useUser();
 
-  const handleLogin = () => {
-    // Demo: cualquier email/contraseña no vacíos entran.
-    // Acá después va la llamada real a tu backend/auth.
-    if (email.trim() && password.trim()) {
-      login(email.trim());
-      router.replace('/(tabs)');
+  const login = useAuthStore((s) => s.login);
+  const status = useAuthStore((s) => s.status);
+  const error = useAuthStore((s) => s.error);
+  const clearError = useAuthStore((s) => s.clearError);
+
+  const isLoading = status === "loading";
+
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) return;
+
+    const success = await login({
+      email: email.trim(),
+      password: password.trim(),
+    });
+    if (success) {
+      router.replace("/(tabs)");
     }
   };
 
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -46,14 +62,18 @@ export default function LoginScreen() {
           </View>
           <View style={styles.headerText}>
             <Text style={styles.appName}>MapFarma</Text>
-            <Text style={styles.tagline}>Farmacias de turno en tiempo real · Pilar</Text>
+            <Text style={styles.tagline}>
+              Farmacias de turno en tiempo real · Pilar
+            </Text>
           </View>
         </View>
 
         {/* Formulario */}
         <View style={styles.form}>
           <Text style={styles.title}>Iniciar sesión</Text>
-          <Text style={styles.subtitle}>Accedé a tu cuenta para encargar medicamentos.</Text>
+          <Text style={styles.subtitle}>
+            Accedé a tu cuenta para encargar medicamentos.
+          </Text>
 
           <Text style={styles.label}>EMAIL</Text>
           <TextInput
@@ -61,9 +81,13 @@ export default function LoginScreen() {
             placeholder="tu@email.com"
             placeholderTextColor={Colors.textMuted}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (error) clearError();
+            }}
             autoCapitalize="none"
             keyboardType="email-address"
+            editable={!isLoading}
           />
 
           <Text style={styles.label}>CONTRASEÑA</Text>
@@ -73,16 +97,38 @@ export default function LoginScreen() {
               placeholder="••••••••"
               placeholderTextColor={Colors.textMuted}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (error) clearError();
+              }}
               secureTextEntry={!showPassword}
+              editable={!isLoading}
             />
-            <Pressable onPress={() => setShowPassword((v) => !v)}>
-              <Text style={styles.showToggle}>{showPassword ? 'Ocultar' : 'Ver'}</Text>
+            <Pressable
+              onPress={() => setShowPassword((v) => !v)}
+              disabled={isLoading}
+            >
+              <Text style={styles.showToggle}>
+                {showPassword ? "Ocultar" : "Ver"}
+              </Text>
             </Pressable>
           </View>
 
-          <Pressable style={styles.loginButton} onPress={handleLogin}>
-            <Text style={styles.loginButtonText}>INGRESAR</Text>
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          <Pressable
+            style={[
+              styles.loginButton,
+              isLoading && styles.loginButtonDisabled,
+            ]}
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color={Colors.white} />
+            ) : (
+              <Text style={styles.loginButtonText}>INGRESAR</Text>
+            )}
           </Pressable>
 
           <View style={styles.signupRow}>
@@ -95,7 +141,7 @@ export default function LoginScreen() {
           <View style={styles.demoBox}>
             <Text style={styles.demoIcon}>💡</Text>
             <Text style={styles.demoText}>
-              Demo: registrate con cualquier email y contraseña.
+              Demo: juan@mapfarma.com / maria@mapfarma.com, contraseña 123456.
             </Text>
           </View>
         </View>
@@ -113,16 +159,16 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.xxl,
     paddingBottom: Spacing.xxl,
     paddingHorizontal: Spacing.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   logoBox: {
     width: 48,
     height: 48,
     borderRadius: Radius.lg,
     backgroundColor: Colors.secondary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: Spacing.md,
   },
   headerText: { flex: 1 },
@@ -176,8 +222,8 @@ const styles = StyleSheet.create({
   },
 
   passwordRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: Radius.md,
@@ -197,12 +243,22 @@ const styles = StyleSheet.create({
     color: Colors.secondary,
   },
 
+  errorText: {
+    color: Colors.danger,
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.regular,
+    marginTop: Spacing.md,
+  },
+
   loginButton: {
     backgroundColor: Colors.primary,
     borderRadius: Radius.md,
     paddingVertical: Spacing.md,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: Spacing.lg,
+  },
+  loginButtonDisabled: {
+    opacity: 0.7,
   },
   loginButtonText: {
     color: Colors.white,
@@ -212,8 +268,8 @@ const styles = StyleSheet.create({
   },
 
   signupRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: Spacing.lg,
   },
   signupText: {
@@ -225,16 +281,16 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontFamily: FontFamily.bold,
     color: Colors.primary,
-    textDecorationLine: 'underline',
+    textDecorationLine: "underline",
   },
 
   demoBox: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: Colors.cardBg,
     borderRadius: Radius.md,
     padding: Spacing.md,
     marginTop: Spacing.xl,
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
   },
   demoIcon: {
     fontSize: FontSize.lg,

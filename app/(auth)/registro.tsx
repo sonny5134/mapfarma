@@ -1,5 +1,5 @@
 // app/registro.tsx
-import { useState } from 'react';
+import { useState } from "react";
 import {
   View,
   Text,
@@ -9,44 +9,56 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-} from 'react-native';
-import { Link, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
-import { useUser } from '../../contexts/UserContext';
+  ActivityIndicator,
+} from "react-native";
+import { Link, router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  Colors,
+  Spacing,
+  FontSize,
+  Radius,
+  FontFamily,
+} from "../../constants/theme";
+import { useAuthStore } from "../../store/auth/authStore";
 
 export default function RegistroScreen() {
-  const [nombre, setNombre] = useState('');
-  const [email, setEmail] = useState('');
-  const [telefono, setTelefono] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const { registrar } = useUser();
+  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("");
+  const [telefono, setTelefono] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleCrearCuenta = () => {
-    if (!nombre.trim() || !email.trim() || !password.trim()) {
-      setError('Completá nombre, email y contraseña.');
-      return;
+  const register = useAuthStore((s) => s.register);
+  const status = useAuthStore((s) => s.status);
+  const error = useAuthStore((s) => s.error);
+  const clearError = useAuthStore((s) => s.clearError);
+
+  const isLoading = status === "loading";
+
+  const handleChange = (setter: (value: string) => void) => (value: string) => {
+    setter(value);
+    if (error) clearError();
+  };
+
+  const handleCrearCuenta = async () => {
+    const success = await register({
+      name: nombre,
+      email,
+      phone: telefono,
+      password,
+      confirmPassword,
+    });
+
+    if (success) {
+      router.replace("/(tabs)");
     }
-    if (password.length < 6) {
-      setError('La contraseña tiene que tener al menos 6 caracteres.');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden.');
-      return;
-    }
-    setError('');
-    // TODO: acá va la llamada real a tu backend/auth para crear el usuario.
-    registrar(nombre.trim(), email.trim(), telefono.trim());
-    router.replace('/(tabs)');
   };
 
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -54,7 +66,11 @@ export default function RegistroScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={12}
+            disabled={isLoading}
+          >
             <Text style={styles.backLink}>← Volver</Text>
           </Pressable>
 
@@ -77,7 +93,8 @@ export default function RegistroScreen() {
             placeholder="Juan García"
             placeholderTextColor={Colors.textMuted}
             value={nombre}
-            onChangeText={setNombre}
+            onChangeText={handleChange(setNombre)}
+            editable={!isLoading}
           />
 
           <Text style={styles.label}>EMAIL</Text>
@@ -86,9 +103,10 @@ export default function RegistroScreen() {
             placeholder="tu@email.com"
             placeholderTextColor={Colors.textMuted}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={handleChange(setEmail)}
             autoCapitalize="none"
             keyboardType="email-address"
+            editable={!isLoading}
           />
 
           <Text style={styles.label}>TELÉFONO</Text>
@@ -97,8 +115,9 @@ export default function RegistroScreen() {
             placeholder="011 1234-5678"
             placeholderTextColor={Colors.textMuted}
             value={telefono}
-            onChangeText={setTelefono}
+            onChangeText={handleChange(setTelefono)}
             keyboardType="phone-pad"
+            editable={!isLoading}
           />
 
           <Text style={styles.label}>CONTRASEÑA</Text>
@@ -107,8 +126,9 @@ export default function RegistroScreen() {
             placeholder="Mínimo 6 caracteres"
             placeholderTextColor={Colors.textMuted}
             value={password}
-            onChangeText={setPassword}
+            onChangeText={handleChange(setPassword)}
             secureTextEntry
+            editable={!isLoading}
           />
 
           <Text style={styles.label}>CONFIRMAR CONTRASEÑA</Text>
@@ -117,14 +137,26 @@ export default function RegistroScreen() {
             placeholder="Repetí tu contraseña"
             placeholderTextColor={Colors.textMuted}
             value={confirmPassword}
-            onChangeText={setConfirmPassword}
+            onChangeText={handleChange(setConfirmPassword)}
             secureTextEntry
+            editable={!isLoading}
           />
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-          <Pressable style={styles.submitButton} onPress={handleCrearCuenta}>
-            <Text style={styles.submitButtonText}>CREAR CUENTA</Text>
+          <Pressable
+            style={[
+              styles.submitButton,
+              isLoading && styles.submitButtonDisabled,
+            ]}
+            onPress={handleCrearCuenta}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color={Colors.white} />
+            ) : (
+              <Text style={styles.submitButtonText}>CREAR CUENTA</Text>
+            )}
           </Pressable>
 
           <View style={styles.loginRow}>
@@ -156,16 +188,16 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   logoBox: {
     width: 42,
     height: 42,
     borderRadius: Radius.lg,
     backgroundColor: Colors.secondary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: Spacing.md,
   },
   title: {
@@ -214,8 +246,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     borderRadius: Radius.md,
     paddingVertical: Spacing.md,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: Spacing.lg,
+  },
+  submitButtonDisabled: {
+    opacity: 0.7,
   },
   submitButtonText: {
     color: Colors.white,
@@ -225,8 +260,8 @@ const styles = StyleSheet.create({
   },
 
   loginRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: Spacing.lg,
   },
   loginText: {
@@ -238,6 +273,6 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontFamily: FontFamily.bold,
     color: Colors.primary,
-    textDecorationLine: 'underline',
+    textDecorationLine: "underline",
   },
 });
