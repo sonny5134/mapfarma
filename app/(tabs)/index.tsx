@@ -13,6 +13,10 @@ import { SkeletonList } from '../../components/SkeletonList';
 import { ErrorView } from '../../components/ErrorView';
 import { useCart } from '../../contexts/CartContext';
 import { useUser } from '../../contexts/UserContext';
+import { usePermission } from '../../hooks/usePermission';
+import { useLocation } from '../../hooks/useLocation';
+import { calcularDistanciaMetros } from '../../utils/distancia';
+import * as Location from 'expo-location';
 
 type SubTab = 'farmacias' | 'medicamentos';
 const categorias: (CategoriaMedicamento | 'Todos')[] = [
@@ -36,6 +40,30 @@ export default function HomeScreen() {
   const { farmacias, cargando: cargandoFarmacias, error: errorFarmacias } = useFarmacias();
   const { medicamentos, cargando: cargandoMedicamentos, error: errorMedicamentos } = useMedicamentos();
   const enTurnoCount = farmacias.filter((f) => f.enTurno).length;
+
+  // Hardware: GPS real, con el hook orquestador de permisos envolviendo expo-location
+  const { request: pedirPermisoUbicacion } = usePermission(Location.requestForegroundPermissionsAsync);
+  const { location, loading: cargandoUbicacion, obtenerUbicacion } = useLocation();
+
+  const handleUsarMiUbicacion = async () => {
+    const concedido = await pedirPermisoUbicacion();
+    if (concedido) {
+      obtenerUbicacion();
+    }
+  };
+
+  // Si ya tenemos la ubicación real, reemplazamos la distancia mockeada por la
+  // calculada de verdad (Haversine) entre el usuario y cada farmacia, y
+  // reordenamos la lista de más cerca a más lejos.
+  const farmaciasConDistancia = useMemo(() => {
+    if (!location) return farmacias;
+    return farmacias
+      .map((f) => ({
+        ...f,
+        distanciaMetros: calcularDistanciaMetros(location.latitude, location.longitude, f.latitud, f.longitud),
+      }))
+      .sort((a, b) => a.distanciaMetros - b.distanciaMetros);
+  }, [farmacias, location]);
 
   const medicamentosFiltrados = useMemo(() => {
     return medicamentos.filter((m) => {
@@ -107,15 +135,30 @@ export default function HomeScreen() {
         ) : (
           <FlatList
             key="farmacias-list"
-            data={farmacias}
+            data={farmaciasConDistancia}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
             ListHeaderComponent={
               <>
                 <View style={styles.mapPlaceholder}>
                   <Ionicons name="map-outline" size={28} color={Colors.textMuted} />
-                  <Text style={styles.mapPlaceholderText}>Mapa de farmacias (próximamente con GPS real)</Text>
+                  <Text style={styles.mapPlaceholderText}>
+                    {location
+                      ? location.address || 'Ubicación detectada'
+                      : 'Mapa de farmacias (próximamente con mapa visual)'}
+                  </Text>
                 </View>
+
+                <Pressable style={styles.locationButton} onPress={handleUsarMiUbicacion} disabled={cargandoUbicacion}>
+                  <Ionicons name="locate" size={16} color={Colors.white} />
+                  <Text style={styles.locationButtonText}>
+                    {cargandoUbicacion
+                      ? 'Buscando...'
+                      : location
+                      ? 'Actualizar mi ubicación'
+                      : 'Usar mi ubicación (distancias reales)'}
+                  </Text>
+                </Pressable>
 
                 <View style={styles.turnoRow}>
                   <View style={styles.turnoDot} />
@@ -272,6 +315,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: Spacing.lg,
   },
+
+  locationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.secondary,
+    borderRadius: Radius.full,
+    paddingVertical: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  locationButtonText: { color: Colors.white, fontSize: FontSize.sm, fontFamily: FontFamily.bold, marginLeft: Spacing.xs },
 
   turnoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.sm },
   turnoDot: {
