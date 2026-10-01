@@ -1,10 +1,14 @@
 // app/medicamento/[id].tsx
-import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { View, Text, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import Toast from 'react-native-toast-message';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
 import { useMedicamento } from '../../hooks/useMedicamento';
 import { useFarmacia } from '../../hooks/useFarmacia';
 import { useCart } from '../../contexts/CartContext';
+import { useUser } from '../../contexts/UserContext';
+import { medicamentosService } from '../../services/firestoreMedicamentos';
 import { SkeletonList } from '../../components/SkeletonList';
 import { ErrorView } from '../../components/ErrorView';
 
@@ -12,16 +16,40 @@ export default function DetalleMedicamentoScreen() {
   // Buenas prácticas: solo viaja el ID por la ruta, el objeto completo se
   // recupera desde Firestore (antes era mockData, la pantalla no cambió).
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { medicamento, cargando, error } = useMedicamento(id);
   const { farmacia } = useFarmacia(medicamento?.farmaciaId);
   const { lines, addItem } = useCart();
+  const { usuario } = useUser();
 
   const enCarrito = lines.find((l) => l.medicamento.id === id)?.cantidad ?? 0;
+  const esDueño = !!medicamento?.publicadoPor && medicamento.publicadoPor === usuario?.email;
+
+  const confirmarEliminar = () => {
+    Alert.alert(
+      '¿Eliminar producto?',
+      'Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Eliminar', style: 'destructive', onPress: handleEliminar },
+      ]
+    );
+  };
+
+  const handleEliminar = async () => {
+    try {
+      await medicamentosService.delete(id);
+      Toast.show({ type: 'success', text1: '¡Eliminado!' });
+      router.back();
+    } catch (err: any) {
+      Toast.show({ type: 'error', text1: 'Error al eliminar', text2: err.message });
+    }
+  };
 
   if (cargando) {
     return (
       <>
-        <Stack.Screen options={{ title: 'Cargando...' }} />
+        <Stack.Screen options={{ headerShown: true, title: 'Cargando...' }} />
         <SkeletonList cantidad={1} alto={220} />
         <SkeletonList cantidad={3} alto={20} />
       </>
@@ -31,7 +59,7 @@ export default function DetalleMedicamentoScreen() {
   if (error) {
     return (
       <>
-        <Stack.Screen options={{ title: 'Error' }} />
+        <Stack.Screen options={{ headerShown: true, title: 'Error' }} />
         <ErrorView mensaje={`No pudimos cargar el medicamento: ${error}`} />
       </>
     );
@@ -40,7 +68,7 @@ export default function DetalleMedicamentoScreen() {
   if (!medicamento) {
     return (
       <>
-        <Stack.Screen options={{ title: 'No encontrado' }} />
+        <Stack.Screen options={{ headerShown: true, title: 'No encontrado' }} />
         <View style={styles.notFound}>
           <Text style={styles.notFoundText}>No encontramos ese medicamento.</Text>
         </View>
@@ -52,12 +80,26 @@ export default function DetalleMedicamentoScreen() {
 
   return (
     <>
-      {/* Header nativo dinámico: el título cambia según el producto */}
+      {/* Header nativo dinámico: el título cambia según el producto.
+          Los botones de editar/borrar solo aparecen si vos publicaste este medicamento. */}
       <Stack.Screen
         options={{
+          headerShown: true,
           title: medicamento.nombre,
           headerStyle: { backgroundColor: Colors.primary },
           headerTintColor: Colors.white,
+          headerRight: esDueño
+            ? () => (
+                <View style={styles.headerActions}>
+                  <Pressable onPress={() => router.push(`/editar/${id}`)} hitSlop={8}>
+                    <Ionicons name="pencil-outline" size={22} color={Colors.white} />
+                  </Pressable>
+                  <Pressable onPress={confirmarEliminar} hitSlop={8}>
+                    <Ionicons name="trash-outline" size={22} color={Colors.white} />
+                  </Pressable>
+                </View>
+              )
+            : undefined,
         }}
       />
       <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
@@ -132,6 +174,7 @@ export default function DetalleMedicamentoScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   scrollContent: { paddingBottom: Spacing.xxl },
+  headerActions: { flexDirection: 'row', gap: Spacing.md, marginRight: Spacing.sm },
 
   notFound: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.lg },
   notFoundText: { fontSize: FontSize.md, fontFamily: FontFamily.regular, color: Colors.textMuted },

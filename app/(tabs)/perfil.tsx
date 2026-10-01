@@ -4,9 +4,11 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
 import { useUser } from '../../contexts/UserContext';
+import { useMisProductos } from '../../hooks/useMisProductos';
 
 export default function PerfilScreen() {
-  const { usuario, misProductos, logout } = useUser();
+  const { usuario, logout } = useUser();
+  const { productos: misProductos } = useMisProductos(usuario?.email);
 
   const handleCerrarSesion = () => {
     logout();
@@ -86,7 +88,11 @@ export default function PerfilScreen() {
       ) : (
         <View style={styles.productosListContainer}>
           {misProductos.map((producto) => (
-            <View key={producto.id} style={styles.productoCard}>
+            <Pressable
+              key={producto.id}
+              style={styles.productoCard}
+              onPress={() => router.push(`/medicamento/${producto.id}`)}
+            >
               {producto.imagenUrl ? (
                 <Image source={{ uri: producto.imagenUrl }} style={styles.productoImagen} />
               ) : (
@@ -99,7 +105,8 @@ export default function PerfilScreen() {
                   ${producto.precio.toLocaleString('es-AR')} · Stock: {producto.stock}
                 </Text>
               </View>
-            </View>
+              <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+            </Pressable>
           ))}
         </View>
       )}
@@ -224,6 +231,7 @@ const styles = StyleSheet.create({
   productosListContainer: { paddingHorizontal: Spacing.lg },
   productoCard: {
     flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: Colors.white,
     borderRadius: Radius.md,
     padding: Spacing.sm,

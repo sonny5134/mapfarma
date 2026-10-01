@@ -1,5 +1,6 @@
 // app/_layout.tsx
 import { Stack } from 'expo-router';
+import Toast from 'react-native-toast-message';
 import { CartProvider } from '../contexts/CartContext';
 import { UserProvider } from '../contexts/UserContext';
 import { Colors } from '../constants/theme';
@@ -24,6 +25,8 @@ export default function RootLayout() {
             }}
           />
         </Stack>
+        {/* Fuera del Stack: para que los Toasts floten por encima de toda la navegación */}
+        <Toast />
       </CartProvider>
     </UserProvider>
   );

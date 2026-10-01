@@ -8,27 +8,46 @@ import {
   Image,
   ScrollView,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import Toast from 'react-native-toast-message';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
 import { useUser } from '../../contexts/UserContext';
+import { medicamentosService } from '../../services/firestoreMedicamentos';
+import { medicamentoSchema, MedicamentoForm } from '../../schemas/medicamentoSchema';
+import { InputField } from '../../components/ui/InputField';
 import { CategoriaMedicamento } from '../../types';
 
 const categorias: CategoriaMedicamento[] = ['Analgésicos', 'Antibióticos', 'Antialérgicos', 'Gastro', 'Otros'];
 
 export default function PublicarScreen() {
-  const { agregarProducto } = useUser();
-
+  const { usuario } = useUser();
   const [imagenUri, setImagenUri] = useState<string | undefined>(undefined);
-  const [nombre, setNombre] = useState('');
-  const [categoria, setCategoria] = useState<CategoriaMedicamento>('Analgésicos');
-  const [precio, setPrecio] = useState('');
-  const [stock, setStock] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  const [requiereReceta, setRequiereReceta] = useState(false);
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { isSubmitting, isValid },
+  } = useForm<MedicamentoForm>({
+    resolver: zodResolver(medicamentoSchema),
+    defaultValues: {
+      nombre: '',
+      categoria: 'Analgésicos',
+      precio: 0,
+      stock: 0,
+      descripcion: '',
+      requiereReceta: false,
+    },
+    mode: 'onTouched', // valida cuando el campo pierde el foco
+  });
 
   const elegirImagen = async (fuente: 'camara' | 'galeria') => {
     const permiso =
@@ -59,145 +78,119 @@ export default function PublicarScreen() {
     ]);
   };
 
-  const resetForm = () => {
-    setImagenUri(undefined);
-    setNombre('');
-    setCategoria('Analgésicos');
-    setPrecio('');
-    setStock('');
-    setDescripcion('');
-    setRequiereReceta(false);
-  };
-
-  const handlePublicar = () => {
-    const precioNum = Number(precio);
-    const stockNum = Number(stock);
-
-    if (!nombre.trim() || !precio.trim() || !stock.trim()) {
-      Alert.alert('Faltan datos', 'Completá al menos nombre, precio y stock.');
-      return;
+  const onSubmit = async (data: MedicamentoForm) => {
+    try {
+      await medicamentosService.create({
+        ...data,
+        farmaciaId: 'propio',
+        imagenUrl: imagenUri,
+        publicadoPor: usuario?.email,
+      } as any);
+      Toast.show({ type: 'success', text1: '¡Publicado!', text2: 'Ya aparece en Mis productos.' });
+      reset();
+      setImagenUri(undefined);
+      router.push('/(tabs)/perfil');
+    } catch (err: any) {
+      Toast.show({ type: 'error', text1: 'Error al guardar', text2: err.message });
     }
-    if (Number.isNaN(precioNum) || precioNum <= 0) {
-      Alert.alert('Precio inválido', 'Ingresá un precio válido en ARS.');
-      return;
-    }
-    if (Number.isNaN(stockNum) || stockNum < 0) {
-      Alert.alert('Stock inválido', 'Ingresá una cantidad de stock válida.');
-      return;
-    }
-
-    agregarProducto({
-      nombre: nombre.trim(),
-      categoria,
-      precio: precioNum,
-      stock: stockNum,
-      descripcion: descripcion.trim(),
-      requiereReceta,
-      imagenUri,
-    });
-
-    resetForm();
-    Alert.alert('¡Publicado!', 'Tu medicamento ya aparece en "Mis productos".', [
-      { text: 'OK', onPress: () => router.push('/(tabs)/perfil') },
-    ]);
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-      <Text style={styles.title}>Agregar medicamento</Text>
-      <Text style={styles.subtitle}>Publicá un producto en el catálogo.</Text>
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>Agregar medicamento</Text>
+        <Text style={styles.subtitle}>Publicá un producto en el catálogo.</Text>
 
-      <Text style={styles.label}>FOTO DEL PRODUCTO</Text>
-      <Pressable style={styles.photoBox} onPress={handleFotoPress}>
-        {imagenUri ? (
-          <Image source={{ uri: imagenUri }} style={styles.photoPreview} />
-        ) : (
-          <>
-            <View style={styles.cameraIconCircle}>
-              <Ionicons name="camera" size={22} color={Colors.primary} />
-            </View>
-            <View style={styles.photoButtonsRow}>
-              <View style={styles.photoButtonPrimary}>
-                <Text style={styles.photoButtonPrimaryText}>📷 Usar cámara</Text>
+        <Text style={styles.label}>FOTO DEL PRODUCTO</Text>
+        <Pressable style={styles.photoBox} onPress={handleFotoPress}>
+          {imagenUri ? (
+            <Image source={{ uri: imagenUri }} style={styles.photoPreview} />
+          ) : (
+            <>
+              <View style={styles.cameraIconCircle}>
+                <Ionicons name="camera" size={22} color={Colors.primary} />
               </View>
-              <View style={styles.photoButtonSecondary}>
-                <Text style={styles.photoButtonSecondaryText}>Galería</Text>
+              <View style={styles.photoButtonsRow}>
+                <View style={styles.photoButtonPrimary}>
+                  <Text style={styles.photoButtonPrimaryText}>📷 Usar cámara</Text>
+                </View>
+                <View style={styles.photoButtonSecondary}>
+                  <Text style={styles.photoButtonSecondaryText}>Galería</Text>
+                </View>
+              </View>
+            </>
+          )}
+        </Pressable>
+
+        <InputField control={control} name="nombre" label="Nombre del medicamento" placeholder="Ej: Ibuprofeno 400mg" />
+
+        {/* Categoría: control manual con Controller (no es un TextInput simple) */}
+        <Controller
+          control={control}
+          name="categoria"
+          render={({ field: { onChange, value } }) => (
+            <View style={styles.wrapper}>
+              <Text style={styles.label}>CATEGORÍA</Text>
+              <View style={styles.categoryRow}>
+                {categorias.map((c) => (
+                  <Pressable
+                    key={c}
+                    style={[styles.categoryPill, value === c && styles.categoryPillActive]}
+                    onPress={() => onChange(c)}
+                  >
+                    <Text style={[styles.categoryPillText, value === c && styles.categoryPillTextActive]}>
+                      {c}
+                    </Text>
+                  </Pressable>
+                ))}
               </View>
             </View>
-          </>
-        )}
-      </Pressable>
+          )}
+        />
 
-      <Text style={styles.label}>NOMBRE DEL MEDICAMENTO</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Ej: Ibuprofeno 400mg"
-        placeholderTextColor={Colors.textMuted}
-        value={nombre}
-        onChangeText={setNombre}
-      />
+        <InputField control={control} name="precio" label="Precio (ARS)" placeholder="Ej: 1850" keyboardType="numeric" />
+        <InputField control={control} name="stock" label="Stock (unidades)" placeholder="Ej: 30" keyboardType="numeric" />
+        <InputField
+          control={control}
+          name="descripcion"
+          label="Descripción"
+          placeholder="Indicaciones, presentación, laboratorio..."
+          multiline
+        />
 
-      <Text style={styles.label}>CATEGORÍA</Text>
-      <View style={styles.categoryRow}>
-        {categorias.map((c) => (
-          <Pressable
-            key={c}
-            style={[styles.categoryPill, categoria === c && styles.categoryPillActive]}
-            onPress={() => setCategoria(c)}
-          >
-            <Text style={[styles.categoryPillText, categoria === c && styles.categoryPillTextActive]}>
-              {c}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+        {/* Checkbox: también con Controller manual */}
+        <Controller
+          control={control}
+          name="requiereReceta"
+          render={({ field: { onChange, value } }) => (
+            <Pressable style={styles.checkboxRow} onPress={() => onChange(!value)}>
+              <View style={[styles.checkbox, value && styles.checkboxActive]}>
+                {value && <Ionicons name="checkmark" size={14} color={Colors.white} />}
+              </View>
+              <Text style={styles.checkboxLabel}>Requiere receta médica</Text>
+            </Pressable>
+          )}
+        />
 
-      <Text style={styles.label}>PRECIO (ARS)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Ej: 1850"
-        placeholderTextColor={Colors.textMuted}
-        value={precio}
-        onChangeText={setPrecio}
-        keyboardType="numeric"
-      />
-
-      <Text style={styles.label}>STOCK (UNIDADES)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Ej: 30"
-        placeholderTextColor={Colors.textMuted}
-        value={stock}
-        onChangeText={setStock}
-        keyboardType="numeric"
-      />
-
-      <Text style={styles.label}>DESCRIPCIÓN</Text>
-      <TextInput
-        style={[styles.input, styles.textArea]}
-        placeholder="Indicaciones, presentación, laboratorio..."
-        placeholderTextColor={Colors.textMuted}
-        value={descripcion}
-        onChangeText={setDescripcion}
-        multiline
-        numberOfLines={4}
-      />
-
-      <Pressable style={styles.checkboxRow} onPress={() => setRequiereReceta((v) => !v)}>
-        <View style={[styles.checkbox, requiereReceta && styles.checkboxActive]}>
-          {requiereReceta && <Ionicons name="checkmark" size={14} color={Colors.white} />}
-        </View>
-        <Text style={styles.checkboxLabel}>Requiere receta médica</Text>
-      </Pressable>
-
-      <Pressable style={styles.submitButton} onPress={handlePublicar}>
-        <Text style={styles.submitButtonText}>PUBLICAR MEDICAMENTO</Text>
-      </Pressable>
-    </ScrollView>
+        <Pressable
+          style={[styles.submitButton, (isSubmitting || !isValid) && styles.submitButtonDisabled]}
+          onPress={handleSubmit(onSubmit)}
+          disabled={isSubmitting || !isValid}
+        >
+          <Text style={styles.submitButtonText}>
+            {isSubmitting ? 'GUARDANDO...' : 'PUBLICAR MEDICAMENTO'}
+          </Text>
+        </Pressable>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   container: { flex: 1, backgroundColor: Colors.background },
   scrollContent: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
 
@@ -210,8 +203,8 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     letterSpacing: 0.5,
     marginBottom: Spacing.xs,
-    marginTop: Spacing.md,
   },
+  wrapper: { marginBottom: Spacing.md },
 
   photoBox: {
     borderWidth: 1.5,
@@ -223,6 +216,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.lg,
     backgroundColor: Colors.white,
     overflow: 'hidden',
+    marginBottom: Spacing.md,
   },
   photoPreview: { width: '100%', height: 160, borderRadius: Radius.sm },
   cameraIconCircle: {
@@ -253,19 +247,6 @@ const styles = StyleSheet.create({
   },
   photoButtonSecondaryText: { color: Colors.text, fontSize: FontSize.sm, fontFamily: FontFamily.bold },
 
-  input: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm + 4,
-    fontSize: FontSize.md,
-    fontFamily: FontFamily.regular,
-    color: Colors.text,
-    backgroundColor: Colors.white,
-  },
-  textArea: { minHeight: 90, textAlignVertical: 'top' },
-
   categoryRow: { flexDirection: 'row', flexWrap: 'wrap' },
   categoryPill: {
     paddingHorizontal: Spacing.md,
@@ -281,7 +262,7 @@ const styles = StyleSheet.create({
   categoryPillText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: Colors.textMuted },
   categoryPillTextActive: { color: Colors.white },
 
-  checkboxRow: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.lg },
+  checkboxRow: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.sm, marginBottom: Spacing.lg },
   checkbox: {
     width: 22,
     height: 22,
@@ -300,7 +281,8 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     paddingVertical: Spacing.md,
     alignItems: 'center',
-    marginTop: Spacing.xl,
+    marginTop: Spacing.md,
   },
+  submitButtonDisabled: { backgroundColor: '#94A3B8' },
   submitButtonText: { color: Colors.white, fontSize: FontSize.md, fontFamily: FontFamily.bold, letterSpacing: 0.5 },
 });
