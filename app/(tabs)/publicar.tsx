@@ -80,12 +80,13 @@ export default function PublicarScreen() {
 
   const onSubmit = async (data: MedicamentoForm) => {
     try {
+      if (!usuario) return;
       await medicamentosService.create({
         ...data,
         farmaciaId: 'propio',
         imagenUrl: imagenUri,
-        publicadoPor: usuario?.email,
-      } as any);
+        userId: usuario.id, // UID de Firebase: lo que validan las Security Rules
+      });
       Toast.show({ type: 'success', text1: '¡Publicado!', text2: 'Ya aparece en Mis productos.' });
       reset();
       setImagenUri(undefined);
