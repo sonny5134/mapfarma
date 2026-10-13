@@ -1,44 +1,53 @@
-// app/login.tsx
-import { useState } from 'react';
+// app/(auth)/login.tsx
 import {
   View,
   Text,
-  TextInput,
   Pressable,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
-import { Link, router } from 'expo-router';
+import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import Toast from 'react-native-toast-message';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
 import { useUser } from '../../contexts/UserContext';
+import { mensajeErrorAuth } from '../../services/authService';
+import { loginSchema, LoginForm } from '../../schemas/authSchemas';
+import { InputField } from '../../components/ui/InputField';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const { login } = useUser();
 
-  const handleLogin = () => {
-    // Demo: cualquier email/contraseña no vacíos entran.
-    // Acá después va la llamada real a tu backend/auth.
-    if (email.trim() && password.trim()) {
-      login(email.trim());
-      router.replace('/(tabs)');
+  const {
+    control,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
+    mode: 'onTouched',
+  });
+
+  // No hace falta navegar a mano: apenas la sesión queda activa, el Auth Guard
+  // de app/_layout.tsx nos manda a los tabs con router.replace (sin botón "Atrás" al login).
+  const onSubmit = async (data: LoginForm) => {
+    try {
+      await login(data.email.trim(), data.password);
+    } catch (err: any) {
+      Toast.show({ type: 'error', text1: 'Error al ingresar', text2: mensajeErrorAuth(err) });
     }
   };
 
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.logoBox}>
@@ -55,34 +64,29 @@ export default function LoginScreen() {
           <Text style={styles.title}>Iniciar sesión</Text>
           <Text style={styles.subtitle}>Accedé a tu cuenta para encargar medicamentos.</Text>
 
-          <Text style={styles.label}>EMAIL</Text>
-          <TextInput
-            style={styles.input}
+          <InputField
+            control={control}
+            name="email"
+            label="Email"
             placeholder="tu@email.com"
-            placeholderTextColor={Colors.textMuted}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
             keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <InputField
+            control={control}
+            name="password"
+            label="Contraseña"
+            placeholder="••••••••"
+            secureTextEntry
+            autoCapitalize="none"
           />
 
-          <Text style={styles.label}>CONTRASEÑA</Text>
-          <View style={styles.passwordRow}>
-            <TextInput
-              style={styles.passwordInput}
-              placeholder="••••••••"
-              placeholderTextColor={Colors.textMuted}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-            />
-            <Pressable onPress={() => setShowPassword((v) => !v)}>
-              <Text style={styles.showToggle}>{showPassword ? 'Ocultar' : 'Ver'}</Text>
-            </Pressable>
-          </View>
-
-          <Pressable style={styles.loginButton} onPress={handleLogin}>
-            <Text style={styles.loginButtonText}>INGRESAR</Text>
+          <Pressable
+            style={[styles.loginButton, isSubmitting && styles.loginButtonDisabled]}
+            onPress={handleSubmit(onSubmit)}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.loginButtonText}>{isSubmitting ? 'INGRESANDO...' : 'INGRESAR'}</Text>
           </Pressable>
 
           <View style={styles.signupRow}>
@@ -90,13 +94,6 @@ export default function LoginScreen() {
             <Link href="/registro" style={styles.signupLink}>
               Crear cuenta
             </Link>
-          </View>
-
-          <View style={styles.demoBox}>
-            <Text style={styles.demoIcon}>💡</Text>
-            <Text style={styles.demoText}>
-              Demo: registrate con cualquier email y contraseña.
-            </Text>
           </View>
         </View>
       </ScrollView>
@@ -126,27 +123,11 @@ const styles = StyleSheet.create({
     marginRight: Spacing.md,
   },
   headerText: { flex: 1 },
-  appName: {
-    fontSize: FontSize.xl,
-    fontFamily: FontFamily.bold,
-    color: Colors.primary,
-  },
-  tagline: {
-    fontSize: FontSize.sm,
-    fontFamily: FontFamily.regular,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
+  appName: { fontSize: FontSize.xl, fontFamily: FontFamily.bold, color: Colors.primary },
+  tagline: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, color: Colors.textMuted, marginTop: 2 },
 
-  form: {
-    padding: Spacing.lg,
-  },
-  title: {
-    fontSize: FontSize.xxxl,
-    fontFamily: FontFamily.bold,
-    color: Colors.primary,
-    marginTop: Spacing.md,
-  },
+  form: { padding: Spacing.lg },
+  title: { fontSize: FontSize.xxxl, fontFamily: FontFamily.bold, color: Colors.primary, marginTop: Spacing.md },
   subtitle: {
     fontSize: FontSize.md,
     fontFamily: FontFamily.regular,
@@ -155,95 +136,22 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
 
-  label: {
-    fontSize: FontSize.xs,
-    fontFamily: FontFamily.bold,
-    color: Colors.textMuted,
-    letterSpacing: 0.5,
-    marginBottom: Spacing.xs,
-    marginTop: Spacing.md,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm + 4,
-    fontSize: FontSize.md,
-    fontFamily: FontFamily.regular,
-    color: Colors.text,
-    backgroundColor: Colors.white,
-  },
-
-  passwordRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.white,
-    paddingHorizontal: Spacing.md,
-  },
-  passwordInput: {
-    flex: 1,
-    paddingVertical: Spacing.sm + 4,
-    fontSize: FontSize.md,
-    fontFamily: FontFamily.regular,
-    color: Colors.text,
-  },
-  showToggle: {
-    fontSize: FontSize.sm,
-    fontFamily: FontFamily.bold,
-    color: Colors.secondary,
-  },
-
   loginButton: {
     backgroundColor: Colors.primary,
     borderRadius: Radius.md,
     paddingVertical: Spacing.md,
     alignItems: 'center',
-    marginTop: Spacing.lg,
+    marginTop: Spacing.md,
   },
-  loginButtonText: {
-    color: Colors.white,
-    fontSize: FontSize.md,
-    fontFamily: FontFamily.bold,
-    letterSpacing: 0.5,
-  },
+  loginButtonDisabled: { backgroundColor: '#94A3B8' },
+  loginButtonText: { color: Colors.white, fontSize: FontSize.md, fontFamily: FontFamily.bold, letterSpacing: 0.5 },
 
-  signupRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: Spacing.lg,
-  },
-  signupText: {
-    fontSize: FontSize.sm,
-    fontFamily: FontFamily.regular,
-    color: Colors.textMuted,
-  },
+  signupRow: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.lg },
+  signupText: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, color: Colors.textMuted },
   signupLink: {
     fontSize: FontSize.sm,
     fontFamily: FontFamily.bold,
     color: Colors.primary,
     textDecorationLine: 'underline',
-  },
-
-  demoBox: {
-    flexDirection: 'row',
-    backgroundColor: Colors.cardBg,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    marginTop: Spacing.xl,
-    alignItems: 'flex-start',
-  },
-  demoIcon: {
-    fontSize: FontSize.lg,
-    marginRight: Spacing.sm,
-  },
-  demoText: {
-    flex: 1,
-    fontSize: FontSize.sm,
-    fontFamily: FontFamily.regular,
-    color: Colors.primary,
   },
 });

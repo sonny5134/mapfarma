@@ -4,15 +4,19 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
 import { useUser } from '../../contexts/UserContext';
+import { useCart } from '../../contexts/CartContext';
 import { useMisProductos } from '../../hooks/useMisProductos';
 
 export default function PerfilScreen() {
   const { usuario, logout } = useUser();
-  const { productos: misProductos } = useMisProductos(usuario?.email);
+  const { clearCart } = useCart();
+  const { productos: misProductos } = useMisProductos(usuario?.id);
 
-  const handleCerrarSesion = () => {
-    logout();
-    router.replace('/login');
+  // Al cerrar sesión limpiamos el carrito (para que no lo herede otra persona) y
+  // el Auth Guard de app/_layout.tsx nos manda solo al Login.
+  const handleCerrarSesion = async () => {
+    clearCart();
+    await logout();
   };
 
   if (!usuario) {

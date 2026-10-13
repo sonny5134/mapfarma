@@ -1,19 +1,12 @@
 // app/(tabs)/_layout.tsx
-import { Tabs, Redirect } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontFamily } from '../../constants/theme';
-import { useUser } from '../../contexts/UserContext';
 import { useCart } from '../../contexts/CartContext';
 
 export default function TabsLayout() {
-  const { usuario } = useUser();
   const { cartCount } = useCart();
-
-  // Si no hay sesión iniciada, no dejamos ver ninguna pantalla de tabs:
-  // mandamos directo al Login.
-  if (!usuario) {
-    return <Redirect href="/login" />;
-  }
+  // La protección por sesión (Auth Guard) ahora vive en app/_layout.tsx
 
   return (
     <Tabs

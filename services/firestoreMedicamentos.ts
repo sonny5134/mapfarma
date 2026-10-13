@@ -20,8 +20,13 @@ export const medicamentosService = {
   },
 
   // CREATE — usado desde la pantalla de Publicar
-  create: async (data: MedicamentoForm & { imagenUrl?: string; publicadoPor?: string }) => {
-    return await addDoc(collection(db, COL), data);
+  // Las Security Rules exigen que userId sea el UID de quien está logueado.
+  create: async (
+    data: MedicamentoForm & { farmaciaId: string; userId: string; imagenUrl?: string }
+  ) => {
+    // Firestore rechaza los campos con valor undefined, así que los sacamos
+    const limpio = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined));
+    return await addDoc(collection(db, COL), limpio);
   },
 
   // UPDATE — usado desde la pantalla de Editar

@@ -32,7 +32,7 @@ export interface Medicamento {
   requiereReceta: boolean;
   imagenUrl?: string;
   farmaciaId: string; // a qué farmacia pertenece este stock
-  publicadoPor?: string; // email del usuario que lo publicó (solo él puede editar/borrar)
+  userId?: string; // UID de Firebase de quien lo publicó (solo él puede editar/borrar)
 }
 
 export interface CartItem {

@@ -1,9 +1,7 @@
-// app/registro.tsx
-import { useState } from 'react';
+// app/(auth)/registro.tsx
 import {
   View,
   Text,
-  TextInput,
   Pressable,
   StyleSheet,
   KeyboardAvoidingView,
@@ -12,46 +10,49 @@ import {
 } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import Toast from 'react-native-toast-message';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
 import { useUser } from '../../contexts/UserContext';
+import { mensajeErrorAuth } from '../../services/authService';
+import { registerSchema, RegisterForm } from '../../schemas/authSchemas';
+import { InputField } from '../../components/ui/InputField';
 
 export default function RegistroScreen() {
-  const [nombre, setNombre] = useState('');
-  const [email, setEmail] = useState('');
-  const [telefono, setTelefono] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
   const { registrar } = useUser();
 
-  const handleCrearCuenta = () => {
-    if (!nombre.trim() || !email.trim() || !password.trim()) {
-      setError('Completá nombre, email y contraseña.');
-      return;
+  const {
+    control,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm<RegisterForm>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { nombre: '', email: '', telefono: '', password: '', confirmar: '' },
+    mode: 'onTouched',
+  });
+
+  // Al crear la cuenta Firebase abre la sesión solo, y el Auth Guard nos lleva a los tabs.
+  const onSubmit = async (data: RegisterForm) => {
+    try {
+      await registrar({
+        nombre: data.nombre.trim(),
+        email: data.email.trim(),
+        telefono: data.telefono?.trim(),
+        password: data.password,
+      });
+      Toast.show({ type: 'success', text1: '¡Cuenta creada!', text2: 'Ya podés usar MapFarma.' });
+    } catch (err: any) {
+      Toast.show({ type: 'error', text1: 'No pudimos crear la cuenta', text2: mensajeErrorAuth(err) });
     }
-    if (password.length < 6) {
-      setError('La contraseña tiene que tener al menos 6 caracteres.');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden.');
-      return;
-    }
-    setError('');
-    // TODO: acá va la llamada real a tu backend/auth para crear el usuario.
-    registrar(nombre.trim(), email.trim(), telefono.trim());
-    router.replace('/(tabs)');
   };
 
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={12}>
@@ -71,60 +72,47 @@ export default function RegistroScreen() {
 
         {/* Formulario */}
         <View style={styles.form}>
-          <Text style={styles.label}>NOMBRE COMPLETO</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Juan García"
-            placeholderTextColor={Colors.textMuted}
-            value={nombre}
-            onChangeText={setNombre}
-          />
-
-          <Text style={styles.label}>EMAIL</Text>
-          <TextInput
-            style={styles.input}
+          <InputField control={control} name="nombre" label="Nombre completo" placeholder="Juan García" />
+          <InputField
+            control={control}
+            name="email"
+            label="Email"
             placeholder="tu@email.com"
-            placeholderTextColor={Colors.textMuted}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
             keyboardType="email-address"
+            autoCapitalize="none"
           />
-
-          <Text style={styles.label}>TELÉFONO</Text>
-          <TextInput
-            style={styles.input}
+          <InputField
+            control={control}
+            name="telefono"
+            label="Teléfono"
             placeholder="011 1234-5678"
-            placeholderTextColor={Colors.textMuted}
-            value={telefono}
-            onChangeText={setTelefono}
             keyboardType="phone-pad"
           />
-
-          <Text style={styles.label}>CONTRASEÑA</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Mínimo 6 caracteres"
-            placeholderTextColor={Colors.textMuted}
-            value={password}
-            onChangeText={setPassword}
+          <InputField
+            control={control}
+            name="password"
+            label="Contraseña"
+            placeholder="Mínimo 6 caracteres, una mayúscula y un número"
             secureTextEntry
+            autoCapitalize="none"
           />
-
-          <Text style={styles.label}>CONFIRMAR CONTRASEÑA</Text>
-          <TextInput
-            style={styles.input}
+          <InputField
+            control={control}
+            name="confirmar"
+            label="Confirmar contraseña"
             placeholder="Repetí tu contraseña"
-            placeholderTextColor={Colors.textMuted}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
             secureTextEntry
+            autoCapitalize="none"
           />
 
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-          <Pressable style={styles.submitButton} onPress={handleCrearCuenta}>
-            <Text style={styles.submitButtonText}>CREAR CUENTA</Text>
+          <Pressable
+            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+            onPress={handleSubmit(onSubmit)}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.submitButtonText}>
+              {isSubmitting ? 'CREANDO CUENTA...' : 'CREAR CUENTA'}
+            </Text>
           </Pressable>
 
           <View style={styles.loginRow}>
@@ -149,16 +137,8 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xl,
     paddingHorizontal: Spacing.lg,
   },
-  backLink: {
-    fontSize: FontSize.md,
-    fontFamily: FontFamily.bold,
-    color: Colors.primary,
-    marginBottom: Spacing.lg,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  backLink: { fontSize: FontSize.md, fontFamily: FontFamily.bold, color: Colors.primary, marginBottom: Spacing.lg },
+  headerRow: { flexDirection: 'row', alignItems: 'center' },
   logoBox: {
     width: 42,
     height: 42,
@@ -168,72 +148,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: Spacing.md,
   },
-  title: {
-    fontSize: FontSize.xxl,
-    fontFamily: FontFamily.bold,
-    color: Colors.primary,
-  },
-  tagline: {
-    fontSize: FontSize.sm,
-    fontFamily: FontFamily.regular,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
+  title: { fontSize: FontSize.xxl, fontFamily: FontFamily.bold, color: Colors.primary },
+  tagline: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, color: Colors.textMuted, marginTop: 2 },
 
-  form: {
-    padding: Spacing.lg,
-  },
-  label: {
-    fontSize: FontSize.xs,
-    fontFamily: FontFamily.bold,
-    color: Colors.textMuted,
-    letterSpacing: 0.5,
-    marginBottom: Spacing.xs,
-    marginTop: Spacing.md,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm + 4,
-    fontSize: FontSize.md,
-    fontFamily: FontFamily.regular,
-    color: Colors.text,
-    backgroundColor: Colors.white,
-  },
-
-  errorText: {
-    color: Colors.danger,
-    fontSize: FontSize.sm,
-    fontFamily: FontFamily.regular,
-    marginTop: Spacing.md,
-  },
+  form: { padding: Spacing.lg },
 
   submitButton: {
     backgroundColor: Colors.primary,
     borderRadius: Radius.md,
     paddingVertical: Spacing.md,
     alignItems: 'center',
-    marginTop: Spacing.lg,
+    marginTop: Spacing.md,
   },
-  submitButtonText: {
-    color: Colors.white,
-    fontSize: FontSize.md,
-    fontFamily: FontFamily.bold,
-    letterSpacing: 0.5,
-  },
+  submitButtonDisabled: { backgroundColor: '#94A3B8' },
+  submitButtonText: { color: Colors.white, fontSize: FontSize.md, fontFamily: FontFamily.bold, letterSpacing: 0.5 },
 
-  loginRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: Spacing.lg,
-  },
-  loginText: {
-    fontSize: FontSize.sm,
-    fontFamily: FontFamily.regular,
-    color: Colors.textMuted,
-  },
+  loginRow: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.lg },
+  loginText: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, color: Colors.textMuted },
   loginLink: {
     fontSize: FontSize.sm,
     fontFamily: FontFamily.bold,

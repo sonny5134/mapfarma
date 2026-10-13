@@ -9,17 +9,17 @@ interface UseMisProductosResult {
   cargando: boolean;
 }
 
-export function useMisProductos(email: string | undefined): UseMisProductosResult {
+export function useMisProductos(uid: string | undefined): UseMisProductosResult {
   const [productos, setProductos] = useState<Medicamento[]>([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    if (!email) {
+    if (!uid) {
       setCargando(false);
       return;
     }
 
-    const q = query(collection(db, 'medicamentos'), where('publicadoPor', '==', email));
+    const q = query(collection(db, 'medicamentos'), where('userId', '==', uid));
 
     const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map((d) => ({
@@ -31,7 +31,7 @@ export function useMisProductos(email: string | undefined): UseMisProductosResul
     });
 
     return unsub;
-  }, [email]);
+  }, [uid]);
 
   return { productos, cargando };
 }

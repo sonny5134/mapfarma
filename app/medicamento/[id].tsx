@@ -23,7 +23,11 @@ export default function DetalleMedicamentoScreen() {
   const { usuario } = useUser();
 
   const enCarrito = lines.find((l) => l.medicamento.id === id)?.cantidad ?? 0;
-  const esDueño = !!medicamento?.publicadoPor && medicamento.publicadoPor === usuario?.email;
+  const esDueño = !!medicamento?.userId && medicamento.userId === usuario?.id;
+  // SOLO PARA LA DEMO DE LA ENTREGA: poné true para ver los botones en productos ajenos
+  // y comprobar que las Security Rules bloquean el borrado. Dejalo en false el resto del tiempo.
+  const DEMO_REGLAS = false;
+  const mostrarAcciones = esDueño || DEMO_REGLAS;
 
   const confirmarEliminar = () => {
     Alert.alert(
@@ -88,7 +92,7 @@ export default function DetalleMedicamentoScreen() {
           title: medicamento.nombre,
           headerStyle: { backgroundColor: Colors.primary },
           headerTintColor: Colors.white,
-          headerRight: esDueño
+          headerRight: mostrarAcciones
             ? () => (
                 <View style={styles.headerActions}>
                   <Pressable onPress={() => router.push(`/editar/${id}`)} hitSlop={8}>
