@@ -1,12 +1,13 @@
 // app/(tabs)/index.tsx
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { View, Text, TextInput, FlatList, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
+import { FlashList } from '@shopify/flash-list';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
 import { useFarmacias } from '../../hooks/useFarmacias';
 import { useMedicamentos } from '../../hooks/useMedicamentos';
-import { CategoriaMedicamento, Medicamento } from '../../types';
+import { CategoriaMedicamento, Farmacia, Medicamento } from '../../types';
 import { FarmaciaCard } from '../../components/FarmaciaCard';
 import { MedicamentoCard } from '../../components/MedicamentoCard';
 import { SkeletonList } from '../../components/SkeletonList';
@@ -32,7 +33,6 @@ export default function HomeScreen() {
   const [busqueda, setBusqueda] = useState('');
   const [categoriaActiva, setCategoriaActiva] = useState<(typeof categorias)[number]>('Todos');
 
-  const router = useRouter();
   const { cartCount, addItem } = useCart();
   const { usuario } = useUser();
   // Ambos hooks usan onSnapshot: la lista se actualiza sola si alguien edita
@@ -73,13 +73,32 @@ export default function HomeScreen() {
     });
   }, [busqueda, categoriaActiva, medicamentos]);
 
-  const handleAgregarAlCarrito = (medicamento: Medicamento) => {
-    addItem(medicamento);
-  };
+  // useCallback: mantiene la MISMA referencia de función entre renders. Sin esto,
+  // React.memo en las tarjetas no serviría de nada, porque recibirían una función
+  // "nueva" en cada letra que se tipea en el buscador.
+  const handleAgregarAlCarrito = useCallback(
+    (medicamento: Medicamento) => addItem(medicamento),
+    [addItem] // addItem es estable: ver CartContext
+  );
 
-  const handleVerDetalle = (medicamento: Medicamento) => {
+  const handleVerDetalle = useCallback((medicamento: Medicamento) => {
     router.push(`/medicamento/${medicamento.id}`);
-  };
+  }, []);
+
+  const handleIrAlCarrito = useCallback(() => router.push('/(tabs)/carrito'), []);
+
+  // En FlashList v2 conviene memoizar las props que se le pasan a la lista
+  const renderFarmacia = useCallback(
+    ({ item }: { item: Farmacia }) => <FarmaciaCard farmacia={item} />,
+    []
+  );
+  const renderMedicamento = useCallback(
+    ({ item }: { item: Medicamento }) => (
+      <MedicamentoCard medicamento={item} onAgregar={handleAgregarAlCarrito} onPress={handleVerDetalle} />
+    ),
+    [handleAgregarAlCarrito, handleVerDetalle]
+  );
+  const keyExtractor = useCallback((item: { id: string }) => item.id, []);
 
   return (
     <View style={styles.container}>
@@ -101,7 +120,12 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <Pressable style={styles.cartButton}>
+        <Pressable
+          style={styles.cartButton}
+          onPress={handleIrAlCarrito}
+          accessibilityRole="button"
+          accessibilityLabel={`Ir al carrito, ${cartCount} ${cartCount === 1 ? 'producto' : 'productos'}`}
+        >
           <Ionicons name="bag-outline" size={22} color={Colors.primary} />
           {cartCount > 0 && (
             <View style={styles.cartBadge}>
@@ -113,13 +137,25 @@ export default function HomeScreen() {
 
       {/* Sub-tabs Farmacias / Medicamentos */}
       <View style={styles.subTabRow}>
-        <Pressable style={styles.subTabButton} onPress={() => setSubTab('farmacias')}>
+        <Pressable
+          style={styles.subTabButton}
+          onPress={() => setSubTab('farmacias')}
+          accessibilityRole="tab"
+          accessibilityLabel="Farmacias"
+          accessibilityState={{ selected: subTab === 'farmacias' }}
+        >
           <Text style={[styles.subTabText, subTab === 'farmacias' && styles.subTabTextActive]}>
             Farmacias
           </Text>
           {subTab === 'farmacias' && <View style={styles.subTabIndicator} />}
         </Pressable>
-        <Pressable style={styles.subTabButton} onPress={() => setSubTab('medicamentos')}>
+        <Pressable
+          style={styles.subTabButton}
+          onPress={() => setSubTab('medicamentos')}
+          accessibilityRole="tab"
+          accessibilityLabel="Medicamentos"
+          accessibilityState={{ selected: subTab === 'medicamentos' }}
+        >
           <Text style={[styles.subTabText, subTab === 'medicamentos' && styles.subTabTextActive]}>
             Medicamentos
           </Text>
@@ -133,10 +169,10 @@ export default function HomeScreen() {
         ) : errorFarmacias ? (
           <ErrorView mensaje={`No pudimos cargar las farmacias: ${errorFarmacias}`} />
         ) : (
-          <FlatList
+          <FlashList
             key="farmacias-list"
             data={farmaciasConDistancia}
-            keyExtractor={(item) => item.id}
+            keyExtractor={keyExtractor}
             contentContainerStyle={styles.listContent}
             ListHeaderComponent={
               <>
@@ -149,7 +185,13 @@ export default function HomeScreen() {
                   </Text>
                 </View>
 
-                <Pressable style={styles.locationButton} onPress={handleUsarMiUbicacion} disabled={cargandoUbicacion}>
+                <Pressable
+                  style={styles.locationButton}
+                  onPress={handleUsarMiUbicacion}
+                  disabled={cargandoUbicacion}
+                  accessibilityRole="button"
+                  accessibilityLabel="Usar mi ubicación para calcular las distancias a las farmacias"
+                >
                   <Ionicons name="locate" size={16} color={Colors.white} />
                   <Text style={styles.locationButtonText}>
                     {cargandoUbicacion
@@ -171,7 +213,7 @@ export default function HomeScreen() {
             ListEmptyComponent={
               <Text style={styles.vacioText}>No hay farmacias cargadas todavía.</Text>
             }
-            renderItem={({ item }) => <FarmaciaCard farmacia={item} />}
+            renderItem={renderFarmacia}
           />
         )
       ) : cargandoMedicamentos ? (
@@ -179,10 +221,10 @@ export default function HomeScreen() {
       ) : errorMedicamentos ? (
         <ErrorView mensaje={`No pudimos cargar los medicamentos: ${errorMedicamentos}`} />
       ) : (
-        <FlatList
+        <FlashList
           key="medicamentos-list"
           data={medicamentosFiltrados}
-          keyExtractor={(item) => item.id}
+          keyExtractor={keyExtractor}
           numColumns={2}
           contentContainerStyle={styles.listContent}
           ListHeaderComponent={
@@ -193,6 +235,7 @@ export default function HomeScreen() {
                   style={styles.searchInput}
                   placeholder="Buscar medicamento..."
                   placeholderTextColor={Colors.textMuted}
+                  accessibilityLabel="Buscar medicamento"
                   value={busqueda}
                   onChangeText={setBusqueda}
                 />
@@ -208,6 +251,9 @@ export default function HomeScreen() {
                   <Pressable
                     style={[styles.categoryPill, categoriaActiva === item && styles.categoryPillActive]}
                     onPress={() => setCategoriaActiva(item)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Filtrar por ${item}`}
+                    accessibilityState={{ selected: categoriaActiva === item }}
                   >
                     <Text
                       style={[
@@ -225,9 +271,7 @@ export default function HomeScreen() {
           ListEmptyComponent={
             <Text style={styles.vacioText}>No encontramos medicamentos con ese filtro.</Text>
           }
-          renderItem={({ item }) => (
-            <MedicamentoCard medicamento={item} onAgregar={handleAgregarAlCarrito} onPress={handleVerDetalle} />
-          )}
+          renderItem={renderMedicamento}
         />
       )}
     </View>

@@ -1,4 +1,5 @@
 // components/MedicamentoCard.tsx
+import { memo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../constants/theme';
@@ -10,11 +11,26 @@ interface Props {
   onPress?: (medicamento: Medicamento) => void;
 }
 
-export function MedicamentoCard({ medicamento, onAgregar, onPress }: Props) {
+// Base del componente. Más abajo se exporta envuelto en memo().
+function MedicamentoCardBase({ medicamento, onAgregar, onPress }: Props) {
   const agotado = medicamento.stock === 0;
 
   return (
-    <Pressable style={styles.card} onPress={() => onPress?.(medicamento)}>
+    <Pressable
+      style={styles.card}
+      onPress={() => onPress?.(medicamento)}
+      accessibilityRole="button"
+      accessibilityLabel={`${medicamento.nombre}, ${medicamento.categoria}, ${
+        agotado ? 'sin stock' : `$${medicamento.precio}`
+      }${medicamento.requiereReceta ? ', requiere receta' : ''}`}
+      accessibilityHint="Abre el detalle del medicamento"
+      // Con lectores de pantalla, el botón "+" queda agrupado dentro de la tarjeta;
+      // esta acción personalizada lo deja alcanzable igual.
+      accessibilityActions={agotado ? undefined : [{ name: 'agregar', label: 'Agregar al carrito' }]}
+      onAccessibilityAction={(e) => {
+        if (e.nativeEvent.actionName === 'agregar') onAgregar?.(medicamento);
+      }}
+    >
       <View style={styles.imagePlaceholder}>
         {medicamento.requiereReceta && (
           <View style={styles.recetaBadge}>
@@ -42,6 +58,8 @@ export function MedicamentoCard({ medicamento, onAgregar, onPress }: Props) {
             style={styles.addButton}
             onPress={() => onAgregar?.(medicamento)}
             hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={`Agregar ${medicamento.nombre} al carrito`}
           >
             <Ionicons name="add" size={18} color={Colors.white} />
           </Pressable>
@@ -50,6 +68,11 @@ export function MedicamentoCard({ medicamento, onAgregar, onPress }: Props) {
     </Pressable>
   );
 }
+
+// React.memo compara las props de forma superficial: si `medicamento`, `onAgregar`
+// y `onPress` mantienen la misma referencia, la tarjeta NO se vuelve a dibujar
+// (por ejemplo, al tipear en el buscador de la Home).
+export const MedicamentoCard = memo(MedicamentoCardBase);
 
 const styles = StyleSheet.create({
   card: {

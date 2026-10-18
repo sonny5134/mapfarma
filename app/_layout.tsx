@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-router';
 import Toast from 'react-native-toast-message';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { CartProvider } from '../contexts/CartContext';
 import { UserProvider, useUser } from '../contexts/UserContext';
 import { Colors } from '../constants/theme';
@@ -63,14 +64,18 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <UserProvider>
-      <CartProvider>
-        <RootNavigator />
-      </CartProvider>
-    </UserProvider>
+    // Necesario para que los gestos (Swipe-to-Delete) funcionen en toda la app
+    <GestureHandlerRootView style={styles.gestureRoot}>
+      <UserProvider>
+        <CartProvider>
+          <RootNavigator />
+        </CartProvider>
+      </UserProvider>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
+  gestureRoot: { flex: 1 },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background },
 });

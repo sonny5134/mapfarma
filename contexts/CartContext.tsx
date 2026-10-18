@@ -1,5 +1,5 @@
 // contexts/CartContext.tsx
-import { createContext, useContext, useState, ReactNode, useMemo } from 'react';
+import { createContext, useCallback, useContext, useState, ReactNode, useMemo } from 'react';
 import { Medicamento } from '../types';
 
 export interface CartLine {
@@ -27,12 +27,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([]);
   const [recetaImagenUri, setRecetaImagenUri] = useState<string | null>(null);
 
-  const setRecetaImagen = (uri: string) => setRecetaImagenUri(uri);
+  // Todas las funciones del carrito usan useCallback con [] porque solo usan el
+  // setter funcional de useState: su referencia nunca cambia, y eso permite que
+  // React.memo en las tarjetas evite re-renders innecesarios.
+  const setRecetaImagen = useCallback((uri: string) => setRecetaImagenUri(uri), []);
 
   // Ahora recibe el medicamento COMPLETO (ya lo tenemos a mano en la Home o el
   // Detalle, que lo trajeron de Firestore) en vez de solo el id + una búsqueda
   // posterior en un mock local que ya no existe.
-  const addItem = (medicamento: Medicamento) => {
+  const addItem = useCallback((medicamento: Medicamento) => {
     setLines((prev) => {
       const existe = prev.find((l) => l.medicamento.id === medicamento.id);
       if (existe) {
@@ -42,30 +45,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { medicamento, cantidad: 1 }];
     });
-  };
+  }, []);
 
-  const incrementItem = (medicamentoId: string) => {
+  const incrementItem = useCallback((medicamentoId: string) => {
     setLines((prev) =>
       prev.map((l) => (l.medicamento.id === medicamentoId ? { ...l, cantidad: l.cantidad + 1 } : l))
     );
-  };
+  }, []);
 
-  const decrementItem = (medicamentoId: string) => {
+  const decrementItem = useCallback((medicamentoId: string) => {
     setLines((prev) =>
       prev
         .map((l) => (l.medicamento.id === medicamentoId ? { ...l, cantidad: l.cantidad - 1 } : l))
         .filter((l) => l.cantidad > 0)
     );
-  };
+  }, []);
 
-  const removeItem = (medicamentoId: string) => {
+  const removeItem = useCallback((medicamentoId: string) => {
     setLines((prev) => prev.filter((l) => l.medicamento.id !== medicamentoId));
-  };
+  }, []);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setLines([]);
     setRecetaImagenUri(null);
-  };
+  }, []);
 
   const cartCount = lines.reduce((acc, l) => acc + l.cantidad, 0);
   const total = useMemo(

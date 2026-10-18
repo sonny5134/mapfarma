@@ -128,6 +128,8 @@ export default function CarritoScreen() {
                     <Pressable
                       style={styles.stepperButton}
                       onPress={() => decrementItem(line.medicamento.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Disminuir cantidad de ${line.medicamento.nombre}`}
                     >
                       <Ionicons name="remove" size={16} color={Colors.white} />
                     </Pressable>
@@ -135,6 +137,8 @@ export default function CarritoScreen() {
                     <Pressable
                       style={styles.stepperButton}
                       onPress={() => incrementItem(line.medicamento.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Aumentar cantidad de ${line.medicamento.nombre}`}
                     >
                       <Ionicons name="add" size={16} color={Colors.white} />
                     </Pressable>
@@ -143,6 +147,8 @@ export default function CarritoScreen() {
                   <Pressable
                     style={styles.removeButton}
                     onPress={() => removeItem(line.medicamento.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Quitar ${line.medicamento.nombre} del carrito`}
                     hitSlop={8}
                   >
                     <Ionicons name="close" size={16} color={Colors.danger} />

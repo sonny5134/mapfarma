@@ -34,7 +34,9 @@
         {
           "locationAlwaysAndWhenInUsePermission": "MapFarma usa tu ubicación para mostrarte las farmacias más cercanas."
         }
-      ]
+      ],
+      "expo-asset",
+      "expo-font"
     ]
   }
 }
