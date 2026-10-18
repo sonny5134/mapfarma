@@ -49,7 +49,12 @@ export function InputField<T extends FieldValues>({
               style={[styles.input, multiline && styles.textArea]}
             />
             {secureTextEntry && (
-              <Pressable onPress={() => setOculto((v) => !v)} hitSlop={8}>
+              <Pressable
+                onPress={() => setOculto((v) => !v)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={oculto ? 'Mostrar contraseña' : 'Ocultar contraseña'}
+              >
                 <Text style={styles.toggle}>{oculto ? 'Ver' : 'Ocultar'}</Text>
               </Pressable>
             )}

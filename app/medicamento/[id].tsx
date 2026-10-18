@@ -95,10 +95,20 @@ export default function DetalleMedicamentoScreen() {
           headerRight: mostrarAcciones
             ? () => (
                 <View style={styles.headerActions}>
-                  <Pressable onPress={() => router.push(`/editar/${id}`)} hitSlop={8}>
+                  <Pressable
+                    onPress={() => router.push(`/editar/${id}`)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Editar producto"
+                  >
                     <Ionicons name="pencil-outline" size={22} color={Colors.white} />
                   </Pressable>
-                  <Pressable onPress={confirmarEliminar} hitSlop={8}>
+                  <Pressable
+                    onPress={confirmarEliminar}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Eliminar producto"
+                  >
                     <Ionicons name="trash-outline" size={22} color={Colors.white} />
                   </Pressable>
                 </View>

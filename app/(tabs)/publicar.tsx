@@ -106,7 +106,12 @@ export default function PublicarScreen() {
         <Text style={styles.subtitle}>Publicá un producto en el catálogo.</Text>
 
         <Text style={styles.label}>FOTO DEL PRODUCTO</Text>
-        <Pressable style={styles.photoBox} onPress={handleFotoPress}>
+        <Pressable
+          style={styles.photoBox}
+          onPress={handleFotoPress}
+          accessibilityRole="button"
+          accessibilityLabel={imagenUri ? 'Cambiar la foto del producto' : 'Agregar una foto del producto'}
+        >
           {imagenUri ? (
             <Image source={{ uri: imagenUri }} style={styles.photoPreview} />
           ) : (
@@ -167,7 +172,13 @@ export default function PublicarScreen() {
           control={control}
           name="requiereReceta"
           render={({ field: { onChange, value } }) => (
-            <Pressable style={styles.checkboxRow} onPress={() => onChange(!value)}>
+            <Pressable
+              style={styles.checkboxRow}
+              onPress={() => onChange(!value)}
+              accessibilityRole="checkbox"
+              accessibilityLabel="Requiere receta médica"
+              accessibilityState={{ checked: !!value }}
+            >
               <View style={[styles.checkbox, value && styles.checkboxActive]}>
                 {value && <Ionicons name="checkmark" size={14} color={Colors.white} />}
               </View>

@@ -1,4 +1,5 @@
 // components/FarmaciaCard.tsx
+import { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../constants/theme';
 import { Farmacia } from '../types';
@@ -7,9 +8,16 @@ interface Props {
   farmacia: Farmacia;
 }
 
-export function FarmaciaCard({ farmacia }: Props) {
+function FarmaciaCardBase({ farmacia }: Props) {
   return (
-    <View style={styles.card}>
+    <View
+      style={styles.card}
+      accessible
+      accessibilityRole="summary"
+      accessibilityLabel={`${farmacia.nombre}, ${farmacia.enTurno ? 'en turno' : 'sin turno'}, a ${
+        farmacia.distanciaMetros
+      } metros, calificación ${farmacia.rating}, teléfono ${farmacia.telefono}`}
+    >
       <View style={styles.topRow}>
         <View style={[styles.badge, farmacia.enTurno ? styles.badgeOn : styles.badgeOff]}>
           <View style={[styles.dot, { backgroundColor: farmacia.enTurno ? Colors.success : Colors.textMuted }]} />
@@ -30,6 +38,9 @@ export function FarmaciaCard({ farmacia }: Props) {
     </View>
   );
 }
+
+// memo(): la tarjeta solo se redibuja si cambia la farmacia (o su distancia).
+export const FarmaciaCard = memo(FarmaciaCardBase);
 
 const styles = StyleSheet.create({
   card: {

@@ -1,11 +1,16 @@
 // app/(tabs)/perfil.tsx
-import { View, Text, Image, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { useCallback } from 'react';
+import { View, Text, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import Toast from 'react-native-toast-message';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
 import { useUser } from '../../contexts/UserContext';
 import { useCart } from '../../contexts/CartContext';
 import { useMisProductos } from '../../hooks/useMisProductos';
+import { medicamentosService } from '../../services/firestoreMedicamentos';
+import { ProductoSwipeable } from '../../components/ProductoSwipeable';
+import { Medicamento } from '../../types';
 
 export default function PerfilScreen() {
   const { usuario, logout } = useUser();
@@ -18,6 +23,30 @@ export default function PerfilScreen() {
     clearCart();
     await logout();
   };
+
+  const handleVerProducto = useCallback((producto: Medicamento) => {
+    router.push(`/medicamento/${producto.id}`);
+  }, []);
+
+  // Swipe-to-Delete conectado al servicio de borrado de Firestore.
+  // Baja segura: siempre pedimos confirmación antes de borrar (como en la Clase 6).
+  const handleEliminarProducto = useCallback((id: string, nombre: string) => {
+    Alert.alert('¿Eliminar producto?', `"${nombre}" se va a borrar. Esta acción no se puede deshacer.`, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await medicamentosService.delete(id);
+            Toast.show({ type: 'success', text1: '¡Eliminado!' });
+          } catch (err: any) {
+            Toast.show({ type: 'error', text1: 'Error al eliminar', text2: err.message });
+          }
+        },
+      },
+    ]);
+  }, []);
 
   if (!usuario) {
     // No debería pasar en el flujo normal (login/registro siempre setean el usuario),
@@ -77,7 +106,11 @@ export default function PerfilScreen() {
       {/* Mis productos */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>MIS PRODUCTOS ({misProductos.length})</Text>
-        <Pressable onPress={() => router.push('/(tabs)/publicar')}>
+        <Pressable
+          onPress={() => router.push('/(tabs)/publicar')}
+          accessibilityRole="button"
+          accessibilityLabel="Agregar un medicamento nuevo"
+        >
           <Text style={styles.sectionAction}>+ Agregar</Text>
         </Pressable>
       </View>
@@ -92,25 +125,12 @@ export default function PerfilScreen() {
       ) : (
         <View style={styles.productosListContainer}>
           {misProductos.map((producto) => (
-            <Pressable
+            <ProductoSwipeable
               key={producto.id}
-              style={styles.productoCard}
-              onPress={() => router.push(`/medicamento/${producto.id}`)}
-            >
-              {producto.imagenUrl ? (
-                <Image source={{ uri: producto.imagenUrl }} style={styles.productoImagen} />
-              ) : (
-                <View style={styles.productoImagenPlaceholder} />
-              )}
-              <View style={styles.productoInfo}>
-                <Text style={styles.productoNombre} numberOfLines={1}>{producto.nombre}</Text>
-                <Text style={styles.productoCategoria}>{producto.categoria}</Text>
-                <Text style={styles.productoPrecio}>
-                  ${producto.precio.toLocaleString('es-AR')} · Stock: {producto.stock}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
-            </Pressable>
+              producto={producto}
+              onPress={handleVerProducto}
+              onDelete={handleEliminarProducto}
+            />
           ))}
         </View>
       )}
