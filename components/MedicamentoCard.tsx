@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   recetaBadgeText: { color: Colors.white, fontSize: 9, fontFamily: FontFamily.bold },
 
   agotadoOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(255,255,255,0.6)',
     alignItems: 'center',
     justifyContent: 'center',

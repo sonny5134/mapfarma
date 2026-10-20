@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   container: { marginBottom: Spacing.sm, borderRadius: Radius.md, overflow: 'hidden' },
 
   fondoEliminar: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: Colors.danger,
     flexDirection: 'row',
     alignItems: 'center',

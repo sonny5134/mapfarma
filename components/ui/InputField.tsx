@@ -5,7 +5,7 @@ import { View, Text, TextInput, Pressable, StyleSheet, TextInputProps } from 're
 import { Colors, Spacing, Radius, FontSize, FontFamily } from '../../constants/theme';
 
 interface InputFieldProps<T extends FieldValues> {
-  control: Control<T>;
+  control: Control<T, any, any>; // acepta formularios donde entrada y salida difieren (z.coerce)
   name: FieldPath<T>;
   label: string;
   placeholder?: string;
