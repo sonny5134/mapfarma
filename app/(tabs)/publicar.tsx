@@ -21,7 +21,7 @@ import Toast from 'react-native-toast-message';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
 import { useUser } from '../../contexts/UserContext';
 import { medicamentosService } from '../../services/firestoreMedicamentos';
-import { medicamentoSchema, MedicamentoForm } from '../../schemas/medicamentoSchema';
+import { medicamentoSchema, MedicamentoForm, MedicamentoInput } from '../../schemas/medicamentoSchema';
 import { InputField } from '../../components/ui/InputField';
 import { CategoriaMedicamento } from '../../types';
 
@@ -36,7 +36,7 @@ export default function PublicarScreen() {
     handleSubmit,
     reset,
     formState: { isSubmitting, isValid },
-  } = useForm<MedicamentoForm>({
+  } = useForm<MedicamentoInput, any, MedicamentoForm>({
     resolver: zodResolver(medicamentoSchema),
     defaultValues: {
       nombre: '',

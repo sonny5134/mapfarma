@@ -15,5 +15,8 @@ export const medicamentoSchema = z.object({
   requiereReceta: z.boolean().default(false),
 });
 
-// Extraemos el tipo de TypeScript automáticamente para no duplicar código
-export type MedicamentoForm = z.infer<typeof medicamentoSchema>;
+// Extraemos los tipos de TypeScript automáticamente para no duplicar código.
+// Con z.coerce el tipo de ENTRADA (lo que escribe la persona) difiere del de SALIDA
+// (ya validado y convertido a número), por eso hay dos tipos:
+export type MedicamentoInput = z.input<typeof medicamentoSchema>; // precio/stock: unknown
+export type MedicamentoForm = z.output<typeof medicamentoSchema>; // precio/stock: number

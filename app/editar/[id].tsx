@@ -7,7 +7,7 @@ import { KeyboardAvoidingView, ScrollView, Platform, Pressable, Text, ActivityIn
 import Toast from 'react-native-toast-message';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
 import { InputField } from '../../components/ui/InputField';
-import { medicamentoSchema, MedicamentoForm } from '../../schemas/medicamentoSchema';
+import { medicamentoSchema, MedicamentoForm, MedicamentoInput } from '../../schemas/medicamentoSchema';
 import { medicamentosService } from '../../services/firestoreMedicamentos';
 import { useMedicamento } from '../../hooks/useMedicamento';
 
@@ -21,7 +21,7 @@ export default function EditarMedicamentoScreen() {
     handleSubmit,
     reset,
     formState: { isSubmitting, isDirty },
-  } = useForm<MedicamentoForm>({
+  } = useForm<MedicamentoInput, any, MedicamentoForm>({
     resolver: zodResolver(medicamentoSchema),
     defaultValues: {
       nombre: '',

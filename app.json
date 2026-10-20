@@ -7,12 +7,6 @@
     "icon": "./assets/icon.png",
     "scheme": "mapfarma",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#E5CDF5"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sonny5134.mapfarma"
@@ -30,13 +24,26 @@
     "plugins": [
       "expo-router",
       [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#E5CDF5",
+          "imageWidth": 200
+        }
+      ],
+      [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "MapFarma usa tu ubicación para mostrarte las farmacias más cercanas."
         }
       ],
-      "expo-asset",
-      "expo-font"
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "MapFarma accede a tus fotos para que puedas adjuntar la receta o la foto de un medicamento.",
+          "cameraPermission": "MapFarma usa la cámara para sacar la foto de la receta o de un medicamento."
+        }
+      ]
     ]
   }
 }
