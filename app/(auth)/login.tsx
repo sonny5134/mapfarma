@@ -81,7 +81,7 @@ export default function LoginScreen() {
 
           <Pressable
             style={[styles.loginButton, isSubmitting && styles.loginButtonDisabled]}
-            onPress={handleSubmit(onSubmit)}
+            onPress={() => handleSubmit(onSubmit)()}
             disabled={isSubmitting}
           >
             <Text style={styles.loginButtonText}>{isSubmitting ? 'INGRESANDO...' : 'INGRESAR'}</Text>

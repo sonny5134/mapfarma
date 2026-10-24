@@ -105,7 +105,7 @@ export default function RegistroScreen() {
 
           <Pressable
             style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-            onPress={handleSubmit(onSubmit)}
+            onPress={() => handleSubmit(onSubmit)()}
             disabled={isSubmitting}
           >
             <Text style={styles.submitButtonText}>
