@@ -16,7 +16,12 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#00D6BD"
       },
-      "package": "com.sonny5134.mapfarma"
+      "package": "com.sonny5134.mapfarma",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -43,7 +48,18 @@
           "photosPermission": "MapFarma accede a tus fotos para que puedas adjuntar la receta o la foto de un medicamento.",
           "cameraPermission": "MapFarma usa la cámara para sacar la foto de la receta o de un medicamento."
         }
-      ]
-    ]
+      ],
+      "expo-asset",
+      "expo-font",
+      "expo-secure-store",
+      "expo-status-bar"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5a69de42-83c9-48c2-886e-4457c1ad4ca3"
+      }
+    },
+    "owner": "sonny5134s-team"
   }
 }

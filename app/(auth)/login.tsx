@@ -9,11 +9,11 @@ import {
   ScrollView,
 } from 'react-native';
 import { Link } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Toast from 'react-native-toast-message';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
+import { Logo } from '../../components/Logo';
 import { useUser } from '../../contexts/UserContext';
 import { mensajeErrorAuth } from '../../services/authService';
 import { loginSchema, LoginForm } from '../../schemas/authSchemas';
@@ -50,9 +50,7 @@ export default function LoginScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.logoBox}>
-            <Ionicons name="heart" size={22} color={Colors.primary} />
-          </View>
+          <Logo size={48} style={{ marginRight: Spacing.md }} />
           <View style={styles.headerText}>
             <Text style={styles.appName}>MapFarma</Text>
             <Text style={styles.tagline}>Farmacias de turno en tiempo real · Pilar</Text>
