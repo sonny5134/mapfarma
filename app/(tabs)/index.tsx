@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
+import { Logo } from '../../components/Logo';
 import { useFarmacias } from '../../hooks/useFarmacias';
 import { useMedicamentos } from '../../hooks/useMedicamentos';
 import { CategoriaMedicamento, Farmacia, Medicamento } from '../../types';
@@ -105,9 +106,7 @@ export default function HomeScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <View style={styles.logoBox}>
-            <Ionicons name="heart" size={18} color={Colors.primary} />
-          </View>
+          <Logo size={36} style={{ marginRight: Spacing.sm }} />
           <View>
             <Text style={styles.appName}>MapFarma</Text>
             <Text style={styles.greeting}>

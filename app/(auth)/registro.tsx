@@ -9,11 +9,11 @@ import {
   ScrollView,
 } from 'react-native';
 import { Link, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Toast from 'react-native-toast-message';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
+import { Logo } from '../../components/Logo';
 import { useUser } from '../../contexts/UserContext';
 import { mensajeErrorAuth } from '../../services/authService';
 import { registerSchema, RegisterForm } from '../../schemas/authSchemas';
@@ -60,9 +60,7 @@ export default function RegistroScreen() {
           </Pressable>
 
           <View style={styles.headerRow}>
-            <View style={styles.logoBox}>
-              <Ionicons name="heart" size={20} color={Colors.primary} />
-            </View>
+            <Logo size={42} style={{ marginRight: Spacing.md }} />
             <View>
               <Text style={styles.title}>Crear cuenta</Text>
               <Text style={styles.tagline}>Pilar, Buenos Aires</Text>
