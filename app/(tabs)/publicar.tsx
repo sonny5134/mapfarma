@@ -189,7 +189,7 @@ export default function PublicarScreen() {
 
         <Pressable
           style={[styles.submitButton, (isSubmitting || !isValid) && styles.submitButtonDisabled]}
-          onPress={handleSubmit(onSubmit)}
+          onPress={() => handleSubmit(onSubmit)()}
           disabled={isSubmitting || !isValid}
         >
           <Text style={styles.submitButtonText}>

@@ -8,8 +8,8 @@ Aplicación móvil que usa el GPS del celular para mostrar las **farmacias de tu
 
 ## Capturas
 
-| Inicio                         | Medicamentos                           | Carrito                      | Perfil                     |
-| ------------------------------ | -------------------------------------- | ---------------------------- | -------------------------- |
+| Inicio | Medicamentos | Carrito | Perfil |
+|---|---|---|---|
 | ![Inicio](docs/screenshot.png) | ![Medicamentos](docs/medicamentos.png) | ![Carrito](docs/carrito.png) | ![Perfil](docs/perfil.png) |
 
 ## Descargar la app (Android)
@@ -43,19 +43,19 @@ Aplicación móvil que usa el GPS del celular para mostrar las **farmacias de tu
 
 ## Stack y dependencias
 
-| Área          | Tecnología                                                   |
-| ------------- | ------------------------------------------------------------ |
-| Framework     | Expo SDK 57 + React Native 0.86 + TypeScript                 |
-| Navegación    | Expo Router (file-based routing, grupos `(tabs)` y `(auth)`) |
-| Backend       | Firebase Authentication + Cloud Firestore                    |
-| Estado global | Context API (`UserContext`, `CartContext`)                   |
-| Formularios   | React Hook Form + Zod                                        |
-| Listas        | `@shopify/flash-list`                                        |
-| Animaciones   | `react-native-reanimated` + `react-native-gesture-handler`   |
-| Hardware      | `expo-location`, `expo-image-picker`, `expo-secure-store`    |
-| Feedback      | `react-native-toast-message`                                 |
-| Testing       | Jest (`jest-expo`) + React Native Testing Library            |
-| Build y CI    | EAS Build + GitHub Actions                                   |
+| Área | Tecnología |
+|---|---|
+| Framework | Expo SDK 57 + React Native 0.86 + TypeScript |
+| Navegación | Expo Router (file-based routing, grupos `(tabs)` y `(auth)`) |
+| Backend | Firebase Authentication + Cloud Firestore |
+| Estado global | Context API (`UserContext`, `CartContext`) |
+| Formularios | React Hook Form + Zod |
+| Listas | `@shopify/flash-list` |
+| Animaciones | `react-native-reanimated` + `react-native-gesture-handler` |
+| Hardware | `expo-location`, `expo-image-picker`, `expo-secure-store` |
+| Feedback | `react-native-toast-message` |
+| Testing | Jest (`jest-expo`) + React Native Testing Library |
+| Build y CI | EAS Build + GitHub Actions |
 
 ## Cómo correr el proyecto en desarrollo
 
@@ -100,6 +100,40 @@ eas build --platform android --profile preview   # genera el .apk instalable
 
 Los perfiles `development`, `preview` y `production` están definidos en `eas.json`.
 
+## Decisiones técnicas
+
+- **Firebase (Auth + Firestore):** sincronización en tiempo real con `onSnapshot` y sin servidor propio. Las Security Rules garantizan que solo el dueño de un producto (`userId` = UID de Firebase) pueda editarlo o borrarlo.
+- **Context API en vez de Zustand:** el estado global es chico (sesión y carrito) y Context alcanza sin agregar una dependencia. Para que no provoque renders de más, las funciones del carrito tienen referencia estable (`useCallback`) y las tarjetas de las listas usan `React.memo`.
+- **Capa de servicios + hooks:** las pantallas no conocen Firebase. Hablan con hooks (`useMedicamentos`, `useFarmacias`) que usan servicios (`firestoreMedicamentos`, `authService`), así que cambiar de backend no obliga a tocar la interfaz.
+- **GPS en lugar de Firebase Storage:** desde 2026 Cloud Storage for Firebase exige una cuenta de facturación (plan Blaze). Para no depender de una tarjeta de crédito, la característica de hardware es la ubicación real, que además es el núcleo de la app.
+- **EAS Build:** el `.apk` se compila en la nube y las credenciales de Firebase viajan como variables de entorno de EAS, nunca en el repositorio.
+
+## Desarrollo asistido por IA
+
+Usamos **Claude (Anthropic)** como programador de apoyo (*pair programming*) durante todo el cuatrimestre. Nuestro método: pegarle el error exacto junto con el stack (Expo SDK 57, React Native 0.86, Firebase, TypeScript) y pedirle primero la **causa raíz** y recién después el código. Todo lo que propuso lo validamos con `npx tsc --noEmit`, con los tests y probando en un celular real.
+
+### Desafíos que resolvimos con ayuda de la IA
+
+| Desafío | Qué se resolvió |
+|---|---|
+| **Salir de `mockData`** | Diseñar la capa de servicios y los hooks con `onSnapshot`, y rehacer el carrito para guardar el medicamento completo (antes buscaba por ID en un mock que dejó de existir). |
+| **Sesión y Auth Guard** | Evitar una condición de carrera entre el registro y `onAuthStateChanged`, y no montar ninguna pantalla hasta restaurar la sesión, para que Firestore no reciba pedidos sin autenticar. |
+| **Security Rules** | Pasar la propiedad de un producto del email al UID de Firebase y escribir reglas que impiden que un usuario edite o borre productos ajenos. Lo comprobamos con dos usuarios. |
+| **Tipos de formularios** | Resolver el error de TypeScript entre `z.coerce.number()` y React Hook Form usando `useForm<Entrada, any, Salida>`. |
+| **Rendimiento (60 fps)** | Memoizar tarjetas, estabilizar funciones con `useCallback` y migrar las listas a FlashList v2. |
+| **Animación** | Swipe-to-Delete con Reanimated 4 y Gesture Handler, usando `scheduleOnRN` (reemplaza a `runOnJS`) y pidiendo confirmación antes de borrar en Firestore. |
+| **Navegación** | Detectar por qué no aparecía la barra de pestañas (faltaba `_layout.tsx`) y por qué el header del detalle estaba oculto (`headerShown` heredado del layout raíz). |
+| **Tooling y entorno** | Disco lleno (`ENOSPC`), conflictos de dependencias (`ERESOLVE`), configuración de Jest con `jest-expo` y Testing Library v14 (API asíncrona), y variables de entorno en EAS. |
+
+### Dónde la IA se equivocó y cómo lo detectamos
+
+Usar IA no es copiar y pegar. Algunos errores que aparecieron y cómo se encontraron:
+
+- Escribió tests con la API de Testing Library v13 y fallaban con la v14 (que es asíncrona): lo detectó `npm test`.
+- Usó `StyleSheet.absoluteFillObject`, que ya no existe en React Native 0.86, y dejó un `index.ts` viejo que importaba un archivo borrado: los detectó `tsc`.
+- Generó el ícono de la app con el símbolo demasiado chico, porque no recortó el margen transparente de la imagen: lo detectamos mirando el resultado en el celular.
+- Propuso Firebase Storage para subir fotos, pero ya no es gratuito: lo descartamos al verificar la documentación y elegimos GPS.
+
 ## Estructura de carpetas
 
 ```
@@ -124,11 +158,11 @@ mapfarma/
 
 ## Paleta de colores
 
-| Color          | Hex       | Uso                                  |
-| -------------- | --------- | ------------------------------------ |
-| Primario       | `#01475D` | Headers, botones principales, textos |
-| Secundario     | `#00D6BD` | Acentos, badges, precios             |
-| Fondo tarjetas | `#E5CDF5` | Tarjetas e imágenes de producto      |
-| Fondo app      | `#F9F9F9` | Fondo general                        |
-| Confirmaciones | `#00BF00` | Estados positivos                    |
-| Errores        | `#FF0000` | Errores y sin stock                  |
+| Color | Hex | Uso |
+|---|---|---|
+| Primario | `#01475D` | Headers, botones principales, textos |
+| Secundario | `#00D6BD` | Acentos, badges, precios |
+| Fondo tarjetas | `#E5CDF5` | Tarjetas e imágenes de producto |
+| Fondo app | `#F9F9F9` | Fondo general |
+| Confirmaciones | `#00BF00` | Estados positivos |
+| Errores | `#FF0000` | Errores y sin stock |

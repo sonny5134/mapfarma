@@ -88,7 +88,7 @@ export default function EditarMedicamentoScreen() {
 
           <Pressable
             style={[styles.submitButton, (isSubmitting || !isDirty) && styles.submitButtonDisabled]}
-            onPress={handleSubmit(onSubmit)}
+            onPress={() => handleSubmit(onSubmit)()}
             disabled={isSubmitting || !isDirty} // solo habilitado si hubo cambios reales
           >
             <Text style={styles.submitButtonText}>

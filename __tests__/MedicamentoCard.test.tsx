@@ -3,6 +3,14 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 import { MedicamentoCard } from '../components/MedicamentoCard';
 import { Medicamento } from '../types';
 
+// Mock de los íconos: en Jest no existe el registro de assets de Metro,
+// así que cargar la fuente del ícono falla con "missing from the asset registry".
+jest.mock('@expo/vector-icons', () => {
+  const { Text } = require('react-native');
+  const Icon = (props: { name?: string }) => <Text>{props.name}</Text>;
+  return new Proxy({}, { get: () => Icon });
+});
+
 const medicamento: Medicamento = {
   id: 'med-1',
   nombre: 'Ibuprofeno 400mg',

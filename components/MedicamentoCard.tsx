@@ -1,6 +1,6 @@
 // components/MedicamentoCard.tsx
 import { memo } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../constants/theme';
 import { Medicamento } from '../types';
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   recetaBadgeText: { color: Colors.white, fontSize: 9, fontFamily: FontFamily.bold },
 
   agotadoOverlay: {
-    ...StyleSheet.absoluteFill,
+    ...(StyleSheet.absoluteFill as ViewStyle), // ◄ Solución al Error TS2698
     backgroundColor: 'rgba(255,255,255,0.6)',
     alignItems: 'center',
     justifyContent: 'center',
