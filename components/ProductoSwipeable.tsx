@@ -1,6 +1,6 @@
 // components/ProductoSwipeable.tsx
 import { memo } from 'react';
-import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Image, Pressable, StyleSheet, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   container: { marginBottom: Spacing.sm, borderRadius: Radius.md, overflow: 'hidden' },
 
   fondoEliminar: {
-    ...StyleSheet.absoluteFill,
+    ...(StyleSheet.absoluteFill as ViewStyle), // ◄ Solución al Error TS2698
     backgroundColor: Colors.danger,
     flexDirection: 'row',
     alignItems: 'center',
