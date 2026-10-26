@@ -1,7 +1,6 @@
-// hooks/useFarmacias.ts — Sincronización en tiempo real con Firestore
+// hooks/useFarmacias.ts
 import { useEffect, useState } from 'react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { farmaciasService } from '../services/firestoreFarmacias';
 import { Farmacia } from '../types';
 
 interface UseFarmaciasResult {
@@ -16,26 +15,19 @@ export function useFarmacias(): UseFarmaciasResult {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const q = query(collection(db, 'farmacias'), orderBy('nombre', 'asc'));
-
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const data = snap.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as Omit<Farmacia, 'id'>),
-        }));
+    const cancelar = farmaciasService.subscribeAll(
+      (data) => {
         setFarmacias(data);
         setCargando(false);
         setError(null);
       },
-      (err) => {
-        setError(err.message);
+      (mensaje) => {
+        setError(mensaje);
         setCargando(false);
       }
     );
 
-    return unsub;
+    return cancelar;
   }, []);
 
   return { farmacias, cargando, error };
