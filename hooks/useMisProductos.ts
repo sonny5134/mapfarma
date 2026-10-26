@@ -1,7 +1,6 @@
 // hooks/useMisProductos.ts
 import { useEffect, useState } from 'react';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { medicamentosService } from '../services/firestoreMedicamentos';
 import { Medicamento } from '../types';
 
 interface UseMisProductosResult {
@@ -19,18 +18,16 @@ export function useMisProductos(uid: string | undefined): UseMisProductosResult 
       return;
     }
 
-    const q = query(collection(db, 'medicamentos'), where('userId', '==', uid));
+    const cancelar = medicamentosService.subscribeByUser(
+      uid,
+      (data) => {
+        setProductos(data);
+        setCargando(false);
+      },
+      () => setCargando(false)
+    );
 
-    const unsub = onSnapshot(q, (snap) => {
-      const data = snap.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<Medicamento, 'id'>),
-      }));
-      setProductos(data);
-      setCargando(false);
-    });
-
-    return unsub;
+    return cancelar;
   }, [uid]);
 
   return { productos, cargando };

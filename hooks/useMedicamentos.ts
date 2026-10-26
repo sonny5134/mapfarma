@@ -1,7 +1,6 @@
-// hooks/useMedicamentos.ts — Sincronización en tiempo real con Firestore
+// hooks/useMedicamentos.ts
 import { useEffect, useState } from 'react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { medicamentosService } from '../services/firestoreMedicamentos';
 import { Medicamento } from '../types';
 
 interface UseMedicamentosResult {
@@ -10,36 +9,29 @@ interface UseMedicamentosResult {
   error: string | null;
 }
 
-// HomeScreen -> useMedicamentos (este hook) -> Firestore ('medicamentos')
-// onSnapshot deja la suscripción abierta: si cualquiera edita un documento desde
-// la consola de Firebase, la lista se actualiza sola, sin pull-to-refresh manual.
+// Pantalla -> useMedicamentos (este hook) -> medicamentosService -> backend.
+// El hook no sabe qué base de datos hay detrás: para cambiar de backend alcanza con
+// cambiar la importación de arriba por otro servicio que cumpla el contrato (ver services/contratos.ts).
 export function useMedicamentos(): UseMedicamentosResult {
   const [medicamentos, setMedicamentos] = useState<Medicamento[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const q = query(collection(db, 'medicamentos'), orderBy('nombre', 'asc'));
-
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const data = snap.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as Omit<Medicamento, 'id'>),
-        }));
+    const cancelar = medicamentosService.subscribeAll(
+      (data) => {
         setMedicamentos(data);
         setCargando(false);
         setError(null);
       },
-      (err) => {
-        setError(err.message);
+      (mensaje) => {
+        setError(mensaje);
         setCargando(false);
       }
     );
 
     // cleanup: cancela la suscripción al desmontar (evita fugas de memoria)
-    return unsub;
+    return cancelar;
   }, []);
 
   return { medicamentos, cargando, error };
