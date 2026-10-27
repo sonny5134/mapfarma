@@ -114,7 +114,15 @@ export default function CarritoScreen() {
 
               {grupo.lines.map((line) => (
                 <View key={line.medicamento.id} style={styles.itemRow}>
-                  <View style={styles.itemImagePlaceholder} />
+                  <View style={styles.itemImagePlaceholder}>
+                    {line.medicamento.imagenUrl ? (
+                      <Image
+                        source={{ uri: line.medicamento.imagenUrl }}
+                        style={styles.itemImagen}
+                        resizeMode="cover"
+                      />
+                    ) : null}
+                  </View>
                   <View style={styles.itemInfo}>
                     <Text style={styles.itemNombre} numberOfLines={1}>
                       {line.medicamento.nombre}
@@ -247,8 +255,9 @@ const styles = StyleSheet.create({
   },
   itemImagePlaceholder: {
     width: 40, height: 40, borderRadius: Radius.sm,
-    backgroundColor: Colors.cardBg, marginRight: Spacing.sm,
+    backgroundColor: Colors.cardBg, marginRight: Spacing.sm, overflow: 'hidden',
   },
+  itemImagen: { width: 40, height: 40 },
   itemInfo: { flex: 1 },
   itemNombre: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: Colors.primary },
   itemPrecio: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, color: Colors.textMuted, marginTop: 2 },

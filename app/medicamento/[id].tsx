@@ -1,5 +1,6 @@
 // app/medicamento/[id].tsx
-import { View, Text, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { View, Text, Image, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
@@ -18,6 +19,7 @@ export default function DetalleMedicamentoScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { medicamento, cargando, error } = useMedicamento(id);
+  const [falloImagen, setFalloImagen] = useState(false);
   const { farmacia } = useFarmacia(medicamento?.farmaciaId);
   const { lines, addItem } = useCart();
   const { usuario } = useUser();
@@ -118,6 +120,14 @@ export default function DetalleMedicamentoScreen() {
       />
       <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
         <View style={styles.imagePlaceholder}>
+          {medicamento.imagenUrl && !falloImagen && (
+            <Image
+              source={{ uri: medicamento.imagenUrl }}
+              style={styles.imagen}
+              resizeMode="cover"
+              onError={() => setFalloImagen(true)}
+            />
+          )}
           {medicamento.requiereReceta && (
             <View style={styles.recetaBadge}>
               <Text style={styles.recetaBadgeText}>Requiere receta</Text>
@@ -197,6 +207,7 @@ const styles = StyleSheet.create({
     height: 220,
     backgroundColor: Colors.cardBg,
   },
+  imagen: { ...StyleSheet.absoluteFill },
   recetaBadge: {
     position: 'absolute',
     top: Spacing.md,

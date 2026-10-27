@@ -3,7 +3,7 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 // @ts-ignore: getReactNativePersistence existe en runtime (bundle de React Native),
 // pero algunas versiones no lo incluyen en los tipos de TypeScript.
 import { initializeAuth, getAuth, getReactNativePersistence } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore } from 'firebase/firestore';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 // Las variables EXPO_PUBLIC_* son inyectadas automáticamente por Expo
@@ -32,5 +32,18 @@ function crearAuth() {
   }
 }
 
+// Firestore con "long polling" automático: en muchas redes (WiFi de instituto,
+// antivirus, firewall, algunos celulares) el canal por defecto se corta y aparece
+// "Could not reach Cloud Firestore backend". Con esta opción el SDK detecta el
+// problema y cambia solo a long polling.
+// initializeFirestore también tira error si se llama dos veces (fast refresh): fallback a getFirestore.
+function crearFirestore() {
+  try {
+    return initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
+  } catch {
+    return getFirestore(app);
+  }
+}
+
 export const auth = crearAuth();
-export const db = getFirestore(app);
+export const db = crearFirestore();

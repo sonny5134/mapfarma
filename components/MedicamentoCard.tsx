@@ -1,6 +1,6 @@
 // components/MedicamentoCard.tsx
-import { memo } from 'react';
-import { View, Text, Pressable, StyleSheet, ViewStyle } from 'react-native';
+import { memo, useState } from 'react';
+import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize, Radius, FontFamily } from '../constants/theme';
 import { Medicamento } from '../types';
@@ -14,6 +14,9 @@ interface Props {
 // Base del componente. Más abajo se exporta envuelto en memo().
 function MedicamentoCardBase({ medicamento, onAgregar, onPress }: Props) {
   const agotado = medicamento.stock === 0;
+  // Si la URL falla (link roto, foto de otro celular), volvemos al recuadro lila.
+  const [falloImagen, setFalloImagen] = useState(false);
+  const mostrarImagen = !!medicamento.imagenUrl && !falloImagen;
 
   return (
     <Pressable
@@ -32,6 +35,15 @@ function MedicamentoCardBase({ medicamento, onAgregar, onPress }: Props) {
       }}
     >
       <View style={styles.imagePlaceholder}>
+        {mostrarImagen && (
+          <Image
+            source={{ uri: medicamento.imagenUrl }}
+            style={styles.imagen}
+            resizeMode="cover"
+            onError={() => setFalloImagen(true)}
+            accessibilityIgnoresInvertColors
+          />
+        )}
         {medicamento.requiereReceta && (
           <View style={styles.recetaBadge}>
             <Text style={styles.recetaBadgeText}>Receta</Text>
@@ -90,7 +102,9 @@ const styles = StyleSheet.create({
     borderRadius: Radius.sm,
     marginBottom: Spacing.sm,
     justifyContent: 'flex-start',
+    overflow: 'hidden',
   },
+  imagen: { ...StyleSheet.absoluteFill },
   recetaBadge: {
     position: 'absolute',
     top: 6,
@@ -103,7 +117,7 @@ const styles = StyleSheet.create({
   recetaBadgeText: { color: Colors.white, fontSize: 9, fontFamily: FontFamily.bold },
 
   agotadoOverlay: {
-    ...(StyleSheet.absoluteFill as ViewStyle), // ◄ Solución al Error TS2698
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(255,255,255,0.6)',
     alignItems: 'center',
     justifyContent: 'center',
