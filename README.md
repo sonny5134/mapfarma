@@ -135,6 +135,15 @@ Usar IA no es copiar y pegar. Algunos errores que aparecieron y cómo se encontr
 - Generó el ícono de la app con el símbolo demasiado chico, porque no recortó el margen transparente de la imagen: lo detectamos mirando el resultado en el celular.
 - Propuso Firebase Storage para subir fotos, pero ya no es gratuito: lo descartamos al verificar la documentación y elegimos GPS.
 
+## Desarrollo guiado por especificaciones (SDD)
+
+Adoptamos **Spec-Driven Development** con la estructura de GitHub Spec Kit: primero se escribe *qué* y *por qué*, y recién después el código.
+
+- `.specify/memory/constitution.md`: principios no negociables del proyecto (stack, arquitectura en capas, seguridad, calidad, diseño).
+- `specs/001-imagenes-medicamentos/`: primera funcionalidad documentada con el flujo completo `spec.md` → `plan.md` → `tasks.md`.
+
+Flujo de trabajo: `/speckit.constitution` → `/speckit.specify` → `/speckit.plan` → `/speckit.tasks` → `/speckit.implement`. La IA propone; el equipo valida con `tsc`, tests y prueba en celular real.
+
 ## Estructura de carpetas
 
 ```

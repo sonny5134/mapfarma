@@ -11,6 +11,7 @@ import { useMedicamentos } from '../../hooks/useMedicamentos';
 import { CategoriaMedicamento, Farmacia, Medicamento } from '../../types';
 import { FarmaciaCard } from '../../components/FarmaciaCard';
 import { MedicamentoCard } from '../../components/MedicamentoCard';
+import { MapaFarmacias } from '../../components/MapaFarmacias';
 import { SkeletonList } from '../../components/SkeletonList';
 import { ErrorView } from '../../components/ErrorView';
 import { useCart } from '../../contexts/CartContext';
@@ -175,14 +176,7 @@ export default function HomeScreen() {
             contentContainerStyle={styles.listContent}
             ListHeaderComponent={
               <>
-                <View style={styles.mapPlaceholder}>
-                  <Ionicons name="map-outline" size={28} color={Colors.textMuted} />
-                  <Text style={styles.mapPlaceholderText}>
-                    {location
-                      ? location.address || 'Ubicación detectada'
-                      : 'Mapa de farmacias (próximamente con mapa visual)'}
-                  </Text>
-                </View>
+                <MapaFarmacias farmacias={farmaciasConDistancia} ubicacion={location} />
 
                 <Pressable
                   style={styles.locationButton}
@@ -340,23 +334,6 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontFamily: FontFamily.regular,
     marginTop: Spacing.xl,
-  },
-
-  mapPlaceholder: {
-    height: 160,
-    backgroundColor: Colors.cardBg,
-    borderRadius: Radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.md,
-  },
-  mapPlaceholderText: {
-    fontSize: FontSize.xs,
-    fontFamily: FontFamily.regular,
-    color: Colors.textMuted,
-    marginTop: Spacing.xs,
-    textAlign: 'center',
-    paddingHorizontal: Spacing.lg,
   },
 
   locationButton: {
