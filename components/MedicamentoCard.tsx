@@ -1,8 +1,9 @@
 // components/MedicamentoCard.tsx
-import { memo, useState } from 'react';
+import { memo, useState, useMemo } from 'react';
 import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, FontSize, Radius, FontFamily } from '../constants/theme';
+import { Spacing, FontSize, Radius, FontFamily, ThemeColors } from '../constants/theme';
+import { useTheme } from '../contexts/ThemeContext';
 import { Medicamento } from '../types';
 
 interface Props {
@@ -13,6 +14,8 @@ interface Props {
 
 // Base del componente. Más abajo se exporta envuelto en memo().
 function MedicamentoCardBase({ medicamento, onAgregar, onPress }: Props) {
+  const { colors: Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const agotado = medicamento.stock === 0;
   // Si la URL falla (link roto, foto de otro celular), volvemos al recuadro lila.
   const [falloImagen, setFalloImagen] = useState(false);
@@ -86,10 +89,10 @@ function MedicamentoCardBase({ medicamento, onAgregar, onPress }: Props) {
 // (por ejemplo, al tipear en el buscador de la Home).
 export const MedicamentoCard = memo(MedicamentoCardBase);
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     borderRadius: Radius.md,
     padding: Spacing.sm,
     margin: Spacing.xs,
@@ -118,7 +121,7 @@ const styles = StyleSheet.create({
 
   agotadoOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: Colors.overlay,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: Radius.sm,

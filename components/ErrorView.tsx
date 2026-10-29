@@ -1,7 +1,9 @@
 // components/ErrorView.tsx — Estado de error con reintento
+import { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, FontSize, Radius, FontFamily } from '../constants/theme';
+import { Spacing, FontSize, Radius, FontFamily, ThemeColors } from '../constants/theme';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface Props {
   mensaje: string;
@@ -9,6 +11,8 @@ interface Props {
 }
 
 export function ErrorView({ mensaje, onRetry }: Props) {
+  const { colors: Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   return (
     <View style={styles.container}>
       <Ionicons name="cloud-offline-outline" size={40} color={Colors.danger} />
@@ -22,7 +26,7 @@ export function ErrorView({ mensaje, onRetry }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.lg },
   msg: {
     color: Colors.danger,

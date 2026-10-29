@@ -4,7 +4,8 @@
 import { memo, useMemo, useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { Colors, Radius, FontSize, FontFamily, Spacing } from '../constants/theme';
+import { Radius, FontSize, FontFamily, Spacing, ThemeColors } from '../constants/theme';
+import { useTheme } from '../contexts/ThemeContext';
 import { Farmacia } from '../types';
 
 interface Props {
@@ -16,7 +17,7 @@ interface Props {
 // Centro de Pilar: se usa solo si todavía no hay farmacias cargadas
 const PILAR = { lat: -34.4587, lng: -58.9137 };
 
-function construirHtml(farmacias: Farmacia[], ubicacion?: Props['ubicacion']) {
+function construirHtml(farmacias: Farmacia[], ubicacion: Props['ubicacion'], oscuro: boolean) {
   const puntos = farmacias.map((f) => ({
     nombre: f.nombre,
     direccion: f.direccion,
@@ -26,14 +27,15 @@ function construirHtml(farmacias: Farmacia[], ubicacion?: Props['ubicacion']) {
     lng: f.longitud,
   }));
   // Se serializa como JSON y se escapa "<" para que ningún texto cierre el <script>
-  const datos = JSON.stringify({ puntos, yo: ubicacion ?? null, centro: PILAR }).replace(/</g, '\\u003c');
+  const datos = JSON.stringify({ puntos, yo: ubicacion ?? null, centro: PILAR, oscuro }).replace(/</g, '\\u003c');
 
   return `<!DOCTYPE html>
 <html><head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-  html,body,#map{height:100%;margin:0;padding:0;background:#E5CDF5;font-family:sans-serif}
+  html,body,#map{height:100%;margin:0;padding:0;background:${oscuro ? '#0F1A1F' : '#E5CDF5'};font-family:sans-serif}
+  ${oscuro ? '.leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.85);}' : ''}
   .pop b{color:#01475D} .pop small{color:#64748B}
 </style>
 </head><body>
@@ -43,6 +45,7 @@ function construirHtml(farmacias: Farmacia[], ubicacion?: Props['ubicacion']) {
   var D = ${datos};
   var map = L.map('map', { zoomControl: true, attributionControl: true })
               .setView([D.centro.lat, D.centro.lng], 14);
+  // Modo oscuro: mismos mosaicos de OpenStreetMap (gratis, sin clave) con el color invertido por CSS
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; OpenStreetMap'
@@ -67,7 +70,7 @@ function construirHtml(farmacias: Farmacia[], ubicacion?: Props['ubicacion']) {
 
   if (D.yo) {
     L.circleMarker([D.yo.latitude, D.yo.longitude], {
-      radius: 9, color: '#FFFFFF', weight: 3, fillColor: '#01475D', fillOpacity: 1
+      radius: 9, color: '#FFFFFF', weight: 3, fillColor: D.oscuro ? '#2A9DBF' : '#01475D', fillOpacity: 1
     }).addTo(map).bindPopup('Estás acá');
     bounds.push([D.yo.latitude, D.yo.longitude]);
   }
@@ -79,11 +82,13 @@ function construirHtml(farmacias: Farmacia[], ubicacion?: Props['ubicacion']) {
 }
 
 function MapaFarmaciasBase({ farmacias, ubicacion, height = 220 }: Props) {
+  const { colors: Colors, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const [cargando, setCargando] = useState(true);
   const [fallo, setFallo] = useState(false);
 
   // Solo se reconstruye el HTML cuando cambian las farmacias o la ubicación
-  const html = useMemo(() => construirHtml(farmacias, ubicacion), [farmacias, ubicacion]);
+  const html = useMemo(() => construirHtml(farmacias, ubicacion, isDark), [farmacias, ubicacion, isDark]);
 
   return (
     <View
@@ -120,7 +125,7 @@ function MapaFarmaciasBase({ farmacias, ubicacion, height = 220 }: Props) {
 
 export const MapaFarmacias = memo(MapaFarmaciasBase);
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
   contenedor: {
     borderRadius: Radius.md,
     overflow: 'hidden',

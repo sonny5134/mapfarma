@@ -1,8 +1,9 @@
 // components/ui/InputField.tsx
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Control, Controller, FieldPath, FieldValues } from 'react-hook-form';
 import { View, Text, TextInput, Pressable, StyleSheet, TextInputProps } from 'react-native';
-import { Colors, Spacing, Radius, FontSize, FontFamily } from '../../constants/theme';
+import { Spacing, Radius, FontSize, FontFamily, ThemeColors } from '../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface InputFieldProps<T extends FieldValues> {
   control: Control<T, any, any>; // acepta formularios donde entrada y salida difieren (z.coerce)
@@ -25,6 +26,8 @@ export function InputField<T extends FieldValues>({
   secureTextEntry,
   multiline,
 }: InputFieldProps<T>) {
+  const { colors: Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const [oculto, setOculto] = useState(true);
 
   return (
@@ -67,7 +70,7 @@ export function InputField<T extends FieldValues>({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
   wrapper: { marginBottom: Spacing.md },
   label: {
     fontSize: FontSize.xs,
@@ -82,7 +85,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: Radius.md,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     paddingHorizontal: Spacing.md,
   },
   input: {

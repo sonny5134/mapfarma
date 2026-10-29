@@ -6,7 +6,8 @@ import Toast from 'react-native-toast-message';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { CartProvider } from '../contexts/CartContext';
 import { UserProvider, useUser } from '../contexts/UserContext';
-import { Colors } from '../constants/theme';
+import { StatusBar } from 'expo-status-bar';
+import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
 
 // El Auth Guard necesita leer el UserContext, así que vive en un componente
 // hijo de los Providers (RootLayout solo los arma).
@@ -15,6 +16,7 @@ function RootNavigator() {
   const segments = useSegments();
   const navigationState = useRootNavigationState();
   const { usuario, ready } = useUser();
+  const { colors: Colors, isDark } = useTheme();
 
   // Auth Guard: expulsa a quien no tiene sesión y saca del login a quien ya la tiene
   useEffect(() => {
@@ -32,7 +34,7 @@ function RootNavigator() {
   // así Firestore no recibe pedidos "sin sesión" que las reglas rechazarían.
   if (!ready) {
     return (
-      <View style={styles.loading}>
+      <View style={[styles.loading, { backgroundColor: Colors.background }]}>
         <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
@@ -40,7 +42,8 @@ function RootNavigator() {
 
   return (
     <>
-      <Stack screenOptions={{ headerShown: false }}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.background } }}>
         {/* Grupo (tabs) — Home, Publicar, Carrito, Perfil, con su propio Tab Navigator */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         {/* Grupo (auth) — Login y Registro, sin header nativo (diseño custom propio) */}
@@ -66,16 +69,18 @@ export default function RootLayout() {
   return (
     // Necesario para que los gestos (Swipe-to-Delete) funcionen en toda la app
     <GestureHandlerRootView style={styles.gestureRoot}>
-      <UserProvider>
-        <CartProvider>
-          <RootNavigator />
-        </CartProvider>
-      </UserProvider>
+      <ThemeProvider>
+        <UserProvider>
+          <CartProvider>
+            <RootNavigator />
+          </CartProvider>
+        </UserProvider>
+      </ThemeProvider>
     </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
   gestureRoot: { flex: 1 },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });
