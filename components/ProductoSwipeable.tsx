@@ -1,6 +1,6 @@
 // components/ProductoSwipeable.tsx
-import { memo } from 'react';
-import { View, Text, Image, Pressable, StyleSheet, ViewStyle } from 'react-native';
+import { memo, useMemo } from 'react';
+import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
@@ -13,7 +13,8 @@ import Animated, {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 // En Reanimated 4, runOnJS fue reemplazado por scheduleOnRN (viene en react-native-worklets)
 import { scheduleOnRN } from 'react-native-worklets';
-import { Colors, Spacing, FontSize, Radius, FontFamily } from '../constants/theme';
+import { Spacing, FontSize, Radius, FontFamily, ThemeColors } from '../constants/theme';
+import { useTheme } from '../contexts/ThemeContext';
 import { Medicamento } from '../types';
 
 interface Props {
@@ -27,6 +28,8 @@ interface Props {
 const UMBRAL_BORRAR = -100;
 
 function ProductoSwipeableBase({ producto, onPress, onDelete }: Props) {
+  const { colors: Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   // useSharedValue vive en el hilo de UI: se actualiza sin pasar por el hilo de JS
   const tx = useSharedValue(0);
 
@@ -110,11 +113,11 @@ function ProductoSwipeableBase({ producto, onPress, onDelete }: Props) {
 // memo(): solo se redibuja si cambia el producto o las funciones (que vienen estables con useCallback)
 export const ProductoSwipeable = memo(ProductoSwipeableBase);
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
   container: { marginBottom: Spacing.sm, borderRadius: Radius.md, overflow: 'hidden' },
 
   fondoEliminar: {
-    ...(StyleSheet.absoluteFill as ViewStyle), // ◄ Solución al Error TS2698
+    ...StyleSheet.absoluteFill,
     backgroundColor: Colors.danger,
     flexDirection: 'row',
     alignItems: 'center',
@@ -125,7 +128,7 @@ const styles = StyleSheet.create({
   fondoTexto: { color: Colors.white, fontFamily: FontFamily.bold, fontSize: FontSize.sm, marginLeft: Spacing.xs },
 
   card: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     borderRadius: Radius.md,
     borderWidth: 1,
     borderColor: Colors.border,

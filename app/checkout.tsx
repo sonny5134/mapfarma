@@ -1,8 +1,9 @@
 // app/checkout.tsx
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { View, Text, Image, Pressable, FlatList, Alert, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
-import { Colors, Spacing, FontSize, Radius, FontFamily } from '../constants/theme';
+import { Spacing, FontSize, Radius, FontFamily, ThemeColors } from '../constants/theme';
+import { useTheme } from '../contexts/ThemeContext';
 import { useCart } from '../contexts/CartContext';
 import { useFarmacias } from '../hooks/useFarmacias';
 import { useUser } from '../contexts/UserContext';
@@ -15,6 +16,8 @@ const metodosPago: { id: MetodoPago; label: string; emoji: string }[] = [
 ];
 
 export default function CheckoutScreen() {
+  const { colors: Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const { lines, total, clearCart, recetaImagenUri } = useCart();
   const { farmacias } = useFarmacias();
   const { registrarPedido } = useUser();
@@ -114,7 +117,7 @@ export default function CheckoutScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   listContent: { padding: Spacing.lg },
 
@@ -128,7 +131,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, color: Colors.textMuted, marginTop: Spacing.xs, marginBottom: Spacing.lg },
 
   resumenCard: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     borderRadius: Radius.md,
     padding: Spacing.md,
     borderWidth: 1,
@@ -157,7 +160,7 @@ const styles = StyleSheet.create({
   recetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E7F9E7',
+    backgroundColor: Colors.successBg,
     borderRadius: Radius.md,
     padding: Spacing.sm,
     marginBottom: Spacing.lg,
@@ -165,7 +168,7 @@ const styles = StyleSheet.create({
   recetaThumb: { width: 32, height: 32, borderRadius: Radius.sm, marginRight: Spacing.sm },
   recetaText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: Colors.success },
   retiroCard: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     borderRadius: Radius.md,
     padding: Spacing.md,
     borderWidth: 1,
@@ -178,7 +181,7 @@ const styles = StyleSheet.create({
   metodoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     borderRadius: Radius.md,
     padding: Spacing.md,
     borderWidth: 1,

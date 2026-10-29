@@ -4,7 +4,8 @@ import { View, Text, TextInput, FlatList, Pressable, StyleSheet } from 'react-na
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
-import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
+import { Spacing, FontSize, Radius, FontFamily, ThemeColors } from '../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
 import { Logo } from '../../components/Logo';
 import { useFarmacias } from '../../hooks/useFarmacias';
 import { useMedicamentos } from '../../hooks/useMedicamentos';
@@ -31,6 +32,8 @@ const categorias: (CategoriaMedicamento | 'Todos')[] = [
 ];
 
 export default function HomeScreen() {
+  const { colors: Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const [subTab, setSubTab] = useState<SubTab>('farmacias');
   const [busqueda, setBusqueda] = useState('');
   const [categoriaActiva, setCategoriaActiva] = useState<(typeof categorias)[number]>('Todos');
@@ -271,7 +274,7 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
 
   header: {
@@ -360,7 +363,7 @@ const styles = StyleSheet.create({
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     borderRadius: Radius.md,
     borderWidth: 1,
     borderColor: Colors.border,
@@ -381,7 +384,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs + 2,
     borderRadius: Radius.full,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
     marginRight: Spacing.sm,

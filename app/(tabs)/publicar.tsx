@@ -1,5 +1,5 @@
 // app/(tabs)/publicar.tsx
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Toast from 'react-native-toast-message';
-import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
+import { Spacing, FontSize, Radius, FontFamily, ThemeColors } from '../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useUser } from '../../contexts/UserContext';
 import { medicamentosService } from '../../services/firestoreMedicamentos';
 import { medicamentoSchema, MedicamentoForm, MedicamentoInput } from '../../schemas/medicamentoSchema';
@@ -28,6 +29,8 @@ import { CategoriaMedicamento } from '../../types';
 const categorias: CategoriaMedicamento[] = ['Analgésicos', 'Antibióticos', 'Antialérgicos', 'Gastro', 'Otros'];
 
 export default function PublicarScreen() {
+  const { colors: Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const { usuario } = useUser();
   const [imagenUri, setImagenUri] = useState<string | undefined>(undefined);
 
@@ -201,7 +204,7 @@ export default function PublicarScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
   flex: { flex: 1 },
   container: { flex: 1, backgroundColor: Colors.background },
   scrollContent: { padding: Spacing.lg, paddingBottom: Spacing.xxl },
@@ -226,7 +229,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: Spacing.lg,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     overflow: 'hidden',
     marginBottom: Spacing.md,
   },
@@ -255,7 +258,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: Radius.full,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
   },
   photoButtonSecondaryText: { color: Colors.text, fontSize: FontSize.sm, fontFamily: FontFamily.bold },
 
@@ -264,7 +267,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs + 2,
     borderRadius: Radius.full,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
     marginRight: Spacing.sm,

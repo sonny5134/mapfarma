@@ -4,7 +4,8 @@ import { View, Text, Image, Pressable, FlatList, StyleSheet, Alert } from 'react
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
+import { Spacing, FontSize, Radius, FontFamily, ThemeColors } from '../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useCart, CartLine } from '../../contexts/CartContext';
 import { useFarmacias } from '../../hooks/useFarmacias';
 
@@ -14,6 +15,8 @@ interface Grupo {
 }
 
 export default function CarritoScreen() {
+  const { colors: Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const {
     lines,
     total,
@@ -219,7 +222,7 @@ export default function CarritoScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
 
   emptyContainer: {
@@ -249,7 +252,7 @@ const styles = StyleSheet.create({
 
   itemRow: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.white, borderRadius: Radius.md,
+    backgroundColor: Colors.surface, borderRadius: Radius.md,
     padding: Spacing.sm, marginBottom: Spacing.xs,
     borderWidth: 1, borderColor: Colors.border,
   },
@@ -271,11 +274,11 @@ const styles = StyleSheet.create({
 
   removeButton: {
     width: 26, height: 26, borderRadius: 13,
-    backgroundColor: '#FDECEC', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.dangerBg, alignItems: 'center', justifyContent: 'center',
   },
 
   resumen: {
-    backgroundColor: Colors.white, borderRadius: Radius.md,
+    backgroundColor: Colors.surface, borderRadius: Radius.md,
     padding: Spacing.md, marginTop: Spacing.sm, marginBottom: Spacing.lg,
     borderWidth: 1, borderColor: Colors.border,
   },
@@ -300,7 +303,7 @@ const styles = StyleSheet.create({
   recetaAdjuntaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: Radius.md,

@@ -1,7 +1,8 @@
 // components/FarmaciaCard.tsx
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors, Spacing, FontSize, Radius, FontFamily } from '../constants/theme';
+import { Spacing, FontSize, Radius, FontFamily, ThemeColors } from '../constants/theme';
+import { useTheme } from '../contexts/ThemeContext';
 import { Farmacia } from '../types';
 
 interface Props {
@@ -9,6 +10,8 @@ interface Props {
 }
 
 function FarmaciaCardBase({ farmacia }: Props) {
+  const { colors: Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   return (
     <View
       style={styles.card}
@@ -42,9 +45,9 @@ function FarmaciaCardBase({ farmacia }: Props) {
 // memo(): la tarjeta solo se redibuja si cambia la farmacia (o su distancia).
 export const FarmaciaCard = memo(FarmaciaCardBase);
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
   card: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     borderRadius: Radius.md,
     padding: Spacing.md,
     marginBottom: Spacing.sm,
@@ -63,8 +66,8 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: Radius.full,
   },
-  badgeOn: { backgroundColor: '#E7F9E7' },
-  badgeOff: { backgroundColor: '#F1F1F1' },
+  badgeOn: { backgroundColor: Colors.successBg },
+  badgeOff: { backgroundColor: Colors.neutralBg },
   dot: { width: 6, height: 6, borderRadius: 3, marginRight: 4 },
   badgeText: { fontSize: FontSize.xs, fontFamily: FontFamily.bold },
   distancia: { fontSize: FontSize.md, fontFamily: FontFamily.bold, color: Colors.secondary },

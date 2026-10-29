@@ -1,18 +1,22 @@
 // app/(tabs)/perfil.tsx
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { View, Text, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
+import { Spacing, FontSize, Radius, FontFamily, ThemeColors } from '../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useUser } from '../../contexts/UserContext';
 import { useCart } from '../../contexts/CartContext';
 import { useMisProductos } from '../../hooks/useMisProductos';
 import { medicamentosService } from '../../services/firestoreMedicamentos';
 import { ProductoSwipeable } from '../../components/ProductoSwipeable';
 import { Medicamento } from '../../types';
+import { SelectorTema } from '../../components/SelectorTema';
 
 export default function PerfilScreen() {
+  const { colors: Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const { usuario, logout } = useUser();
   const { clearCart } = useCart();
   const { productos: misProductos } = useMisProductos(usuario?.id);
@@ -103,6 +107,9 @@ export default function PerfilScreen() {
         </View>
       </View>
 
+      {/* Modo claro / oscuro / automático */}
+      <SelectorTema />
+
       {/* Mis productos */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>MIS PRODUCTOS ({misProductos.length})</Text>
@@ -151,7 +158,7 @@ export default function PerfilScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   scrollContent: { paddingBottom: Spacing.xxl },
 
@@ -178,7 +185,7 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     margin: Spacing.lg,
     marginTop: -Spacing.md,
     borderRadius: Radius.md,
@@ -236,7 +243,7 @@ const styles = StyleSheet.create({
   sectionAction: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: Colors.secondary },
 
   emptyBox: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     marginHorizontal: Spacing.lg,
     borderRadius: Radius.md,
     padding: Spacing.lg,
@@ -256,7 +263,7 @@ const styles = StyleSheet.create({
   productoCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     borderRadius: Radius.md,
     padding: Spacing.sm,
     marginBottom: Spacing.sm,
@@ -281,7 +288,7 @@ const styles = StyleSheet.create({
   primaryButtonText: { color: Colors.white, fontSize: FontSize.sm, fontFamily: FontFamily.bold },
 
   logoutButton: {
-    backgroundColor: '#FDECEC',
+    backgroundColor: Colors.dangerBg,
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.lg,
     paddingVertical: Spacing.md,

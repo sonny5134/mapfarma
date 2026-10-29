@@ -1,10 +1,11 @@
 // app/medicamento/[id].tsx
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { View, Text, Image, Pressable, ScrollView, Alert, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
-import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
+import { Spacing, FontSize, Radius, FontFamily, ThemeColors } from '../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useMedicamento } from '../../hooks/useMedicamento';
 import { useFarmacia } from '../../hooks/useFarmacia';
 import { useCart } from '../../contexts/CartContext';
@@ -14,6 +15,8 @@ import { SkeletonList } from '../../components/SkeletonList';
 import { ErrorView } from '../../components/ErrorView';
 
 export default function DetalleMedicamentoScreen() {
+  const { colors: Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   // Buenas prácticas: solo viaja el ID por la ruta, el objeto completo se
   // recupera desde Firestore (antes era mockData, la pantalla no cambió).
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -195,7 +198,7 @@ export default function DetalleMedicamentoScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   scrollContent: { paddingBottom: Spacing.xxl },
   headerActions: { flexDirection: 'row', gap: Spacing.md, marginRight: Spacing.sm },
@@ -245,7 +248,7 @@ const styles = StyleSheet.create({
 
   stockBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#E7F9E7',
+    backgroundColor: Colors.successBg,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     borderRadius: Radius.full,
@@ -254,7 +257,7 @@ const styles = StyleSheet.create({
   stockText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: Colors.success },
   stockBadgeAgotado: {
     alignSelf: 'flex-start',
-    backgroundColor: '#FDECEC',
+    backgroundColor: Colors.dangerBg,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     borderRadius: Radius.full,
@@ -263,7 +266,7 @@ const styles = StyleSheet.create({
   stockTextAgotado: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: Colors.danger },
 
   farmaciaCard: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surface,
     borderRadius: Radius.md,
     borderWidth: 1,
     borderColor: Colors.border,
@@ -276,7 +279,7 @@ const styles = StyleSheet.create({
   farmaciaRetiro: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: Colors.secondary, marginTop: 2 },
 
   recetaAviso: {
-    backgroundColor: '#FDECEC',
+    backgroundColor: Colors.dangerBg,
     borderRadius: Radius.md,
     padding: Spacing.md,
     marginTop: Spacing.lg,

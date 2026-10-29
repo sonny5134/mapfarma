@@ -3,13 +3,15 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 import { MedicamentoCard } from '../components/MedicamentoCard';
 import { Medicamento } from '../types';
 
-// Mock de los íconos: en Jest no existe el registro de assets de Metro,
-// así que cargar la fuente del ícono falla con "missing from the asset registry".
-jest.mock('@expo/vector-icons', () => {
-  const { Text } = require('react-native');
-  const Icon = (props: { name?: string }) => <Text>{props.name}</Text>;
-  return new Proxy({}, { get: () => Icon });
-});
+// La tarjeta usa el tema (ThemeContext), que importa AsyncStorage. En Jest no existe el
+// módulo nativo, así que se usa el mock oficial que trae la propia librería.
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+);
+
+// Los íconos intentan cargar su fuente (expo-font) al montarse, y en Jest no hay assets.
+// Para estos tests solo importa que el ícono exista, no cómo se dibuja.
+jest.mock('@expo/vector-icons', () => ({ Ionicons: 'Ionicons' }));
 
 const medicamento: Medicamento = {
   id: 'med-1',

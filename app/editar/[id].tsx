@@ -1,17 +1,20 @@
 // app/editar/[id].tsx
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { KeyboardAvoidingView, ScrollView, Platform, Pressable, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
+import { Spacing, FontSize, Radius, FontFamily, ThemeColors } from '../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
 import { InputField } from '../../components/ui/InputField';
 import { medicamentoSchema, MedicamentoForm, MedicamentoInput } from '../../schemas/medicamentoSchema';
 import { medicamentosService } from '../../services/firestoreMedicamentos';
 import { useMedicamento } from '../../hooks/useMedicamento';
 
 export default function EditarMedicamentoScreen() {
+  const { colors: Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const { id } = useLocalSearchParams<{ id: string }>();
   const { medicamento, cargando } = useMedicamento(id);
   const router = useRouter();
@@ -101,7 +104,7 @@ export default function EditarMedicamentoScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
   flex: { flex: 1 },
   container: { flex: 1, backgroundColor: Colors.background },
   scrollContent: { padding: Spacing.lg, paddingBottom: Spacing.xxl },

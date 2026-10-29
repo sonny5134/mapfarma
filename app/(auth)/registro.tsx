@@ -1,4 +1,5 @@
 // app/(auth)/registro.tsx
+import { useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,7 +13,8 @@ import { Link, router } from 'expo-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Toast from 'react-native-toast-message';
-import { Colors, Spacing, FontSize, Radius, FontFamily } from '../../constants/theme';
+import { Spacing, FontSize, Radius, FontFamily, ThemeColors } from '../../constants/theme';
+import { useTheme } from '../../contexts/ThemeContext';
 import { Logo } from '../../components/Logo';
 import { useUser } from '../../contexts/UserContext';
 import { mensajeErrorAuth } from '../../services/authService';
@@ -20,6 +22,8 @@ import { registerSchema, RegisterForm } from '../../schemas/authSchemas';
 import { InputField } from '../../components/ui/InputField';
 
 export default function RegistroScreen() {
+  const { colors: Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const { registrar } = useUser();
 
   const {
@@ -125,7 +129,7 @@ export default function RegistroScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
   flex: { flex: 1, backgroundColor: Colors.background },
   scrollContent: { flexGrow: 1 },
 

@@ -1,6 +1,8 @@
 // components/SkeletonList.tsx — Cajas grises que evitan saltos visuales (layout shift) mientras carga
+import { useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Colors, Spacing, Radius } from '../constants/theme';
+import { Spacing, Radius, ThemeColors } from '../constants/theme';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface Props {
   cantidad?: number;
@@ -8,6 +10,8 @@ interface Props {
 }
 
 export function SkeletonList({ cantidad = 5, alto = 76 }: Props) {
+  const { colors: Colors } = useTheme();
+  const styles = useMemo(() => makeStyles(Colors), [Colors]);
   return (
     <View style={styles.container}>
       {Array.from({ length: cantidad }).map((_, i) => (
@@ -20,7 +24,7 @@ export function SkeletonList({ cantidad = 5, alto = 76 }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
   container: { padding: Spacing.lg },
   skeleton: {
     backgroundColor: Colors.border,
