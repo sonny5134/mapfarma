@@ -39,6 +39,8 @@ Aplicación móvil que usa el GPS del celular para mostrar las **farmacias de tu
 - **Carrito y checkout** con manejo de medicamentos que requieren receta (foto con cámara o galería).
 - **CRUD completo:** publicar, editar y eliminar medicamentos propios, con formularios validados (React Hook Form + Zod).
 - **Seguridad:** Firestore Security Rules por usuario: solo el dueño de un producto puede editarlo o borrarlo.
+- **Modo oscuro:** tema claro, oscuro o automático (sigue al celular), con selector en Perfil y preferencia guardada; el mapa también cambia de estilo.
+- **Mapa visual** con OpenStreetMap + Leaflet (WebView): sin API key ni facturación.
 - **Rendimiento y UX:** listas con FlashList, componentes memoizados, Swipe-to-Delete animado y accesibilidad (`accessibilityLabel` / `accessibilityRole`).
 
 ## Stack y dependencias
@@ -76,6 +78,8 @@ EXPO_PUBLIC_FB_MSG_SENDER_ID=...
 EXPO_PUBLIC_FB_APP_ID=...
 ```
 
+La configuración de Cloudinary (subida de fotos) ya viene por defecto en `services/imagenesService.ts`; las variables `EXPO_PUBLIC_CLOUDINARY_*` son opcionales y, si existen, tienen prioridad.
+
 ```bash
 npx expo start
 ```
@@ -106,6 +110,7 @@ Los perfiles `development`, `preview` y `production` están definidos en `eas.js
 - **Context API en vez de Zustand:** el estado global es chico (sesión y carrito) y Context alcanza sin agregar una dependencia. Para que no provoque renders de más, las funciones del carrito tienen referencia estable (`useCallback`) y las tarjetas de las listas usan `React.memo`.
 - **Capa de servicios + hooks:** las pantallas no conocen Firebase. Hablan con hooks (`useMedicamentos`, `useFarmacias`) que usan servicios (`firestoreMedicamentos`, `authService`), así que cambiar de backend no obliga a tocar la interfaz.
 - **Backend intercambiable (arquitectura agnóstica):** las pantallas hablan con hooks y los hooks con servicios que cumplen un contrato (`services/contratos.ts`); solo los archivos de servicio importan Firebase. Para comprobarlo hay una segunda implementación que consume una API REST con Axios (`services/restMedicamentos.ts` + `services/api.ts`): cambiando una sola línea de importación en `hooks/useMedicamentos.ts`, la Home muestra datos de la API sin modificar nada de la interfaz. Los interceptores de Axios adjuntan el token de sesión solo a nuestra propia API, nunca a servicios de terceros.
+- **Fotos en Cloudinary:** Firebase Storage exige plan Blaze, así que las fotos de los productos se suben a Cloudinary (plan gratuito, subida *unsigned* sin claves secretas) y en Firestore se guarda solo el link `https`. Así la foto que saca un integrante se ve en el celular de todos. La foto de la receta médica no se sube: queda local.
 - **GPS en lugar de Firebase Storage:** desde 2026 Cloud Storage for Firebase exige una cuenta de facturación (plan Blaze). Para no depender de una tarjeta de crédito, la característica de hardware es la ubicación real, que además es el núcleo de la app.
 - **EAS Build:** el `.apk` se compila en la nube y las credenciales de Firebase viajan como variables de entorno de EAS, nunca en el repositorio.
 

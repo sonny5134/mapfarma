@@ -22,6 +22,7 @@ import { Spacing, FontSize, Radius, FontFamily, ThemeColors } from '../../consta
 import { useTheme } from '../../contexts/ThemeContext';
 import { useUser } from '../../contexts/UserContext';
 import { medicamentosService } from '../../services/firestoreMedicamentos';
+import { imagenesService } from '../../services/imagenesService';
 import { medicamentoSchema, MedicamentoForm, MedicamentoInput } from '../../schemas/medicamentoSchema';
 import { InputField } from '../../components/ui/InputField';
 import { CategoriaMedicamento } from '../../types';
@@ -33,6 +34,7 @@ export default function PublicarScreen() {
   const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const { usuario } = useUser();
   const [imagenUri, setImagenUri] = useState<string | undefined>(undefined);
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
 
   const {
     control,
@@ -84,10 +86,19 @@ export default function PublicarScreen() {
   const onSubmit = async (data: MedicamentoForm) => {
     try {
       if (!usuario) return;
+
+      // Si eligió foto, primero se sube a la nube: en Firestore se guarda el link https
+      // (visible para todos), nunca la ruta local file:// del celular.
+      let imagenUrl: string | undefined;
+      if (imagenUri) {
+        setSubiendoFoto(true);
+        imagenUrl = await imagenesService.subir(imagenUri);
+      }
+
       await medicamentosService.create({
         ...data,
         farmaciaId: 'propio',
-        imagenUrl: imagenUri,
+        imagenUrl,
         userId: usuario.id, // UID de Firebase: lo que validan las Security Rules
       });
       Toast.show({ type: 'success', text1: '¡Publicado!', text2: 'Ya aparece en Mis productos.' });
@@ -96,6 +107,8 @@ export default function PublicarScreen() {
       router.push('/(tabs)/perfil');
     } catch (err: any) {
       Toast.show({ type: 'error', text1: 'Error al guardar', text2: err.message });
+    } finally {
+      setSubiendoFoto(false);
     }
   };
 
@@ -196,7 +209,7 @@ export default function PublicarScreen() {
           disabled={isSubmitting || !isValid}
         >
           <Text style={styles.submitButtonText}>
-            {isSubmitting ? 'GUARDANDO...' : 'PUBLICAR MEDICAMENTO'}
+            {subiendoFoto ? 'SUBIENDO FOTO...' : isSubmitting ? 'GUARDANDO...' : 'PUBLICAR MEDICAMENTO'}
           </Text>
         </Pressable>
       </ScrollView>
