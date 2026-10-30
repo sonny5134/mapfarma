@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Farmacias: cualquiera con sesión puede leerlas. Solo se editan desde la consola.
+    match /farmacias/{farmaciaId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Medicamentos: leer con sesión; crear solo a nombre propio;
+    // modificar o borrar SOLO el dueño original (userId == UID de quien pide).
+    match /medicamentos/{medicamentoId} {
+      allow read: if request.auth != null;
+
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+
+      allow update: if request.auth != null
+                    && resource.data.userId == request.auth.uid
+                    && request.resource.data.userId == resource.data.userId;
+
+      allow delete: if request.auth != null
+                    && resource.data.userId == request.auth.uid;
+    }
+
+    // Perfil de cada usuario: solo él puede leerlo. El ROL no se puede elegir ni cambiar
+    // desde la app: al crearse debe ser 'Cliente', y después no puede modificarse.
+    // Para promover a un integrante del equipo, se edita el campo "rol" desde la consola.
+    match /usuarios/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      allow create: if request.auth != null && request.auth.uid == uid
+                    && request.resource.data.get('rol', 'Cliente') == 'Cliente';
+
+      allow update: if request.auth != null && request.auth.uid == uid
+                    && request.resource.data.get('rol', 'Cliente') == resource.data.get('rol', 'Cliente');
+
+      allow delete: if false;
+    }
+  }
+}

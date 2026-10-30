@@ -54,7 +54,10 @@ export interface Pedido {
   recetaImagenUrl?: string;
 }
 
-export type Rol = 'Desarrollador' | 'Diseñador' | 'Líder de proyecto';
+// 'Cliente' es el rol por defecto de cualquier persona que se registra. Los demás roles
+// (equipo del proyecto) solo se asignan a mano desde la consola de Firebase.
+export type Rol = 'Cliente' | 'Desarrollador' | 'Diseñador' | 'Líder de proyecto';
+export const ROLES_VALIDOS: Rol[] = ['Cliente', 'Desarrollador', 'Diseñador', 'Líder de proyecto'];
 
 export interface Usuario {
   id: string;

@@ -3,6 +3,7 @@
 // (teléfono, fecha de alta, pedidos realizados) vive en Firestore: usuarios/{uid}
 import { doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
 import { db } from './firebase';
+import { Rol } from '../types';
 
 const COL = 'usuarios';
 
@@ -11,6 +12,9 @@ export interface PerfilUsuario {
   telefono: string;
   miembroDesde: string;
   pedidosRealizados: number;
+  // Rol del usuario. Al registrarse siempre es 'Cliente': las Security Rules impiden que
+  // alguien se asigne otro rol; el equipo se promueve a mano desde la consola de Firebase.
+  rol?: Rol;
 }
 
 export const usuariosService = {
