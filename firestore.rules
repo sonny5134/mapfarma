@@ -24,6 +24,16 @@ service cloud.firestore {
                     && resource.data.userId == request.auth.uid;
     }
 
+    // Pedidos: cada persona crea y lee SOLO los suyos. Una vez creado, un pedido no se
+    // modifica ni se borra (es un registro de lo que pasó).
+    match /pedidos/{pedidoId} {
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null
+                  && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
     // Perfil de cada usuario: solo él puede leerlo. El ROL no se puede elegir ni cambiar
     // desde la app: al crearse debe ser 'Cliente', y después no puede modificarse.
     // Para promover a un integrante del equipo, se edita el campo "rol" desde la consola.

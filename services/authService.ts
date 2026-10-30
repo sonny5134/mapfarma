@@ -4,6 +4,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
   signOut,
+  sendPasswordResetEmail,
   onAuthStateChanged,
   User,
 } from 'firebase/auth';
@@ -26,6 +27,12 @@ export const authService = {
   // Guardar el nombre visible en el perfil de Firebase Auth
   updateName: async (user: User, nombre: string) => {
     await updateProfile(user, { displayName: nombre });
+  },
+
+  // Envía por mail un enlace para elegir una contraseña nueva
+  sendPasswordReset: async (email: string) => {
+    auth.languageCode = 'es'; // el mail llega en español
+    await sendPasswordResetEmail(auth, email);
   },
 
   // Cerrar sesión
