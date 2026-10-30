@@ -27,3 +27,9 @@ export const registerSchema = z
   });
 
 export type RegisterForm = z.infer<typeof registerSchema>;
+
+export const recuperarSchema = z.object({
+  email: z.string().min(1, 'Ingresá tu email').email('Email inválido'),
+});
+
+export type RecuperarForm = z.infer<typeof recuperarSchema>;

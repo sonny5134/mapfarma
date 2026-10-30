@@ -8,6 +8,7 @@ import { useCart } from '../contexts/CartContext';
 import { useFarmacias } from '../hooks/useFarmacias';
 import { useUser } from '../contexts/UserContext';
 import { MetodoPago } from '../types';
+import { pedidosService } from '../services/pedidosService';
 
 const metodosPago: { id: MetodoPago; label: string; emoji: string }[] = [
   { id: 'efectivo', label: 'Efectivo en farmacia', emoji: '💵' },
@@ -20,7 +21,8 @@ export default function CheckoutScreen() {
   const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const { lines, total, clearCart, recetaImagenUri } = useCart();
   const { farmacias } = useFarmacias();
-  const { registrarPedido } = useUser();
+  const { usuario, registrarPedido } = useUser();
+  const [guardando, setGuardando] = useState(false);
   const [metodoElegido, setMetodoElegido] = useState<MetodoPago>('efectivo');
 
   // Simplificación: asumimos que el pedido se retira en la farmacia de la primera línea.
@@ -28,12 +30,37 @@ export default function CheckoutScreen() {
   // separar el pedido en uno por farmacia. Por ahora, un solo punto de retiro.
   const farmaciaRetiro = lines[0] ? farmacias.find((f) => f.id === lines[0].medicamento.farmaciaId) : undefined;
 
-  const handleConfirmar = () => {
-    registrarPedido();
-    clearCart();
-    Alert.alert('¡Pedido confirmado!', 'Podés retirarlo en la farmacia seleccionada.', [
-      { text: 'OK', onPress: () => router.replace('/(tabs)') },
-    ]);
+  const handleConfirmar = async () => {
+    if (!usuario || guardando) return;
+    setGuardando(true);
+    try {
+      // Se guarda el pedido en Firestore: así aparece en el historial del Perfil
+      await pedidosService.create({
+        userId: usuario.id,
+        items: lines.map((l) => ({
+          medicamentoId: l.medicamento.id,
+          nombre: l.medicamento.nombre,
+          precio: l.medicamento.precio,
+          cantidad: l.cantidad,
+        })),
+        total,
+        farmaciaRetiroId: farmaciaRetiro?.id ?? lines[0].medicamento.farmaciaId,
+        farmaciaNombre: farmaciaRetiro?.nombre ?? 'Farmacia',
+        metodoPago: metodoElegido,
+        fecha: new Date().toISOString(),
+        requiereReceta: lines.some((l) => l.medicamento.requiereReceta),
+      });
+      await registrarPedido();
+      clearCart();
+      Alert.alert('¡Pedido confirmado!', 'Podés retirarlo en la farmacia seleccionada.', [
+        { text: 'OK', onPress: () => router.replace('/(tabs)') },
+      ]);
+    } catch (err: any) {
+      // Si falla, el carrito NO se vacía: la persona puede reintentar
+      Alert.alert('No se pudo confirmar', err?.message ?? 'Probá de nuevo en unos instantes.');
+    } finally {
+      setGuardando(false);
+    }
   };
 
   if (lines.length === 0) {
@@ -110,8 +137,12 @@ export default function CheckoutScreen() {
         )}
       />
 
-      <Pressable style={styles.confirmarButton} onPress={handleConfirmar}>
-        <Text style={styles.confirmarButtonText}>CONFIRMAR Y PAGAR</Text>
+      <Pressable
+        style={[styles.confirmarButton, guardando && { opacity: 0.6 }]}
+        onPress={handleConfirmar}
+        disabled={guardando}
+      >
+        <Text style={styles.confirmarButtonText}>{guardando ? 'CONFIRMANDO...' : 'CONFIRMAR Y PAGAR'}</Text>
       </Pressable>
     </View>
   );

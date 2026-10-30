@@ -83,6 +83,10 @@ export default function LoginScreen() {
             autoCapitalize="none"
           />
 
+          <Link href="/recuperar" style={styles.forgotLink}>
+            ¿Olvidaste tu contraseña?
+          </Link>
+
           <Pressable
             style={[styles.loginButton, isSubmitting && styles.loginButtonDisabled]}
             onPress={() => handleSubmit(onSubmit)()}
@@ -136,6 +140,15 @@ const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
     color: Colors.textMuted,
     marginTop: Spacing.xs,
     marginBottom: Spacing.lg,
+  },
+
+  forgotLink: {
+    alignSelf: 'flex-end',
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.bold,
+    color: Colors.secondary,
+    marginTop: -Spacing.xs,
+    marginBottom: Spacing.xs,
   },
 
   loginButton: {

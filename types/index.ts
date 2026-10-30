@@ -43,15 +43,25 @@ export interface CartItem {
 
 export type MetodoPago = 'efectivo' | 'debito' | 'credito';
 
+// Una línea del pedido. Se guarda una "foto" del nombre y el precio del momento de la compra:
+// si el medicamento cambia de precio o se borra, el historial no se altera.
+export interface PedidoItem {
+  medicamentoId: string;
+  nombre: string;
+  precio: number;
+  cantidad: number;
+}
+
 export interface Pedido {
   id: string;
-  items: CartItem[];
+  userId: string; // UID de Firebase de quien hizo el pedido
+  items: PedidoItem[];
   total: number;
   farmaciaRetiroId: string;
+  farmaciaNombre: string;
   metodoPago: MetodoPago;
-  fecha: string;
+  fecha: string; // ISO 8601, ej: "2026-10-29T22:15:00.000Z"
   requiereReceta: boolean;
-  recetaImagenUrl?: string;
 }
 
 // 'Cliente' es el rol por defecto de cualquier persona que se registra. Los demás roles

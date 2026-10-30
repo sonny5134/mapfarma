@@ -9,6 +9,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useUser } from '../../contexts/UserContext';
 import { useCart } from '../../contexts/CartContext';
 import { useMisProductos } from '../../hooks/useMisProductos';
+import { usePedidos } from '../../hooks/usePedidos';
 import { medicamentosService } from '../../services/firestoreMedicamentos';
 import { ProductoSwipeable } from '../../components/ProductoSwipeable';
 import { Medicamento } from '../../types';
@@ -20,6 +21,7 @@ export default function PerfilScreen() {
   const { usuario, logout } = useUser();
   const { clearCart } = useCart();
   const { productos: misProductos } = useMisProductos(usuario?.id);
+  const { pedidos } = usePedidos(usuario?.id);
 
   // Al cerrar sesión limpiamos el carrito (para que no lo herede otra persona) y
   // el Auth Guard de app/_layout.tsx nos manda solo al Login.
@@ -103,7 +105,7 @@ export default function PerfilScreen() {
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Pedidos realizados</Text>
-          <Text style={styles.infoValueBold}>{usuario.pedidosRealizados}</Text>
+          <Text style={styles.infoValueBold}>{pedidos.length}</Text>
         </View>
       </View>
 
@@ -144,11 +146,49 @@ export default function PerfilScreen() {
 
       {/* Historial de pedidos */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>HISTORIAL DE PEDIDOS (0)</Text>
+        <Text style={styles.sectionTitle}>HISTORIAL DE PEDIDOS ({pedidos.length})</Text>
       </View>
-      <View style={styles.emptyBox}>
-        <Text style={styles.emptyBoxText}>Todavía no realizaste ningún pedido.</Text>
-      </View>
+      {pedidos.length === 0 ? (
+        <View style={styles.emptyBox}>
+          <Text style={styles.emptyBoxText}>Todavía no realizaste ningún pedido.</Text>
+        </View>
+      ) : (
+        <View style={styles.productosListContainer}>
+          {pedidos.map((pedido) => (
+            <View
+              key={pedido.id}
+              style={styles.pedidoCard}
+              accessible
+              accessibilityLabel={`Pedido del ${new Date(pedido.fecha).toLocaleDateString('es-AR')}, ${
+                pedido.farmaciaNombre
+              }, total ${pedido.total} pesos`}
+            >
+              <View style={styles.pedidoTop}>
+                <Text style={styles.pedidoFecha}>
+                  {new Date(pedido.fecha).toLocaleDateString('es-AR', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                  {' · '}
+                  {new Date(pedido.fecha).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                </Text>
+                <Text style={styles.pedidoTotal}>${pedido.total.toLocaleString('es-AR')}</Text>
+              </View>
+              <Text style={styles.pedidoFarmacia}>Retiro en {pedido.farmaciaNombre}</Text>
+              {pedido.items.map((item) => (
+                <Text key={item.medicamentoId} style={styles.pedidoItem} numberOfLines={1}>
+                  {item.cantidad} × {item.nombre}
+                </Text>
+              ))}
+              <Text style={styles.pedidoMetodo}>
+                Pago: {pedido.metodoPago === 'efectivo' ? 'efectivo en farmacia' : pedido.metodoPago === 'debito' ? 'tarjeta de débito' : 'tarjeta de crédito'}
+                {pedido.requiereReceta ? ' · con receta' : ''}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       {/* Cerrar sesión */}
       <Pressable style={styles.logoutButton} onPress={handleCerrarSesion}>
@@ -241,6 +281,21 @@ const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
     letterSpacing: 0.5,
   },
   sectionAction: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: Colors.secondary },
+
+  pedidoCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  pedidoTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  pedidoFecha: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: Colors.primary },
+  pedidoTotal: { fontSize: FontSize.md, fontFamily: FontFamily.bold, color: Colors.secondary },
+  pedidoFarmacia: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, color: Colors.textMuted, marginTop: 2, marginBottom: Spacing.xs },
+  pedidoItem: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, color: Colors.text },
+  pedidoMetodo: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, color: Colors.textMuted, marginTop: Spacing.xs },
 
   emptyBox: {
     backgroundColor: Colors.surface,
