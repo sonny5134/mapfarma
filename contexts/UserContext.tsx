@@ -1,7 +1,7 @@
 // contexts/UserContext.tsx
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import { User } from 'firebase/auth';
-import { Usuario, Rol } from '../types';
+import { Usuario, Rol, ROLES_VALIDOS } from '../types';
 import { authService } from '../services/authService';
 import { usuariosService, PerfilUsuario } from '../services/usuariosService';
 import { tokenService } from '../services/tokenService';
@@ -35,7 +35,7 @@ function construirUsuario(fbUser: User, perfil: PerfilUsuario | null): Usuario {
     nombre: perfil?.nombre || fbUser.displayName || email.split('@')[0],
     email,
     telefono: perfil?.telefono || undefined,
-    rol: 'Desarrollador' as Rol,
+    rol: ROLES_VALIDOS.includes(perfil?.rol as Rol) ? (perfil!.rol as Rol) : 'Cliente',
     miembroDesde:
       perfil?.miembroDesde ||
       formatearMes(fbUser.metadata.creationTime ? new Date(fbUser.metadata.creationTime) : new Date()),
@@ -93,6 +93,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         telefono: telefono ?? '',
         miembroDesde: formatearMes(new Date()),
         pedidosRealizados: 0,
+        rol: 'Cliente', // nadie se registra con otro rol (lo exigen las Security Rules)
       };
       await usuariosService.create(fbUser.uid, perfil).catch(() => {});
       await guardarToken(fbUser);

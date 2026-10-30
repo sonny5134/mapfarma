@@ -91,7 +91,7 @@ export default function PerfilScreen() {
 
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Rol</Text>
-          <Text style={styles.infoValue}>🛠️ {usuario.rol}</Text>
+          <Text style={styles.infoValue}>{usuario.rol === 'Cliente' ? '🛒' : '🛠️'} {usuario.rol}</Text>
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Teléfono</Text>
