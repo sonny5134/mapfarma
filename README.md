@@ -8,13 +8,13 @@ Aplicación móvil que usa el GPS del celular para mostrar las **farmacias de tu
 
 ## Capturas
 
-| Inicio | Medicamentos | Carrito | Perfil |
-|---|---|---|---|
+| Inicio                         | Medicamentos                           | Carrito                      | Perfil                     |
+| ------------------------------ | -------------------------------------- | ---------------------------- | -------------------------- |
 | ![Inicio](docs/screenshot.png) | ![Medicamentos](docs/medicamentos.png) | ![Carrito](docs/carrito.png) | ![Perfil](docs/perfil.png) |
 
 ## Descargar la app (Android)
 
-📲 **[Descargar MapFarma (.apk)](REEMPLAZAR_CON_EL_LINK_DEL_BUILD)**
+📲 **[Descargar MapFarma (.apk)](https://expo.dev/accounts/sonny5134s-team/projects/mapfarma/builds/1fda0696-c914-47c9-a864-5154d48283ca)**
 
 1. Abrí el link desde tu celular Android (o escaneá el QR de la página del build).
 2. Descargá el archivo `.apk`.
@@ -33,6 +33,8 @@ Aplicación móvil que usa el GPS del celular para mostrar las **farmacias de tu
 ## Funcionalidades
 
 - **Autenticación real** con Firebase Authentication (email y contraseña), sesión persistente y redirección automática según la sesión (Auth Guard).
+- **Recuperar contraseña:** desde el login, "¿Olvidaste tu contraseña?" envía por email un enlace de Firebase para elegir una nueva.
+- **Historial de pedidos:** cada pedido se guarda en Firestore (colección `pedidos`) y se muestra en Perfil con fecha, farmacia de retiro, productos, total y método de pago. Cada persona ve solo los suyos.
 - **Farmacias en tiempo real** con Firestore (`onSnapshot`): si cambia un dato en la base, la app se actualiza sola.
 - **GPS real:** calcula la distancia a cada farmacia (fórmula de Haversine) y las reordena de la más cercana a la más lejana.
 - **Catálogo de medicamentos** con búsqueda, filtro por categoría y detalle.
@@ -45,19 +47,19 @@ Aplicación móvil que usa el GPS del celular para mostrar las **farmacias de tu
 
 ## Stack y dependencias
 
-| Área | Tecnología |
-|---|---|
-| Framework | Expo SDK 57 + React Native 0.86 + TypeScript |
-| Navegación | Expo Router (file-based routing, grupos `(tabs)` y `(auth)`) |
-| Backend | Firebase Authentication + Cloud Firestore |
-| Estado global | Context API (`UserContext`, `CartContext`) |
-| Formularios | React Hook Form + Zod |
-| Listas | `@shopify/flash-list` |
-| Animaciones | `react-native-reanimated` + `react-native-gesture-handler` |
-| Hardware | `expo-location`, `expo-image-picker`, `expo-secure-store` |
-| Feedback | `react-native-toast-message` |
-| Testing | Jest (`jest-expo`) + React Native Testing Library |
-| Build y CI | EAS Build + GitHub Actions |
+| Área          | Tecnología                                                   |
+| ------------- | ------------------------------------------------------------ |
+| Framework     | Expo SDK 57 + React Native 0.86 + TypeScript                 |
+| Navegación    | Expo Router (file-based routing, grupos `(tabs)` y `(auth)`) |
+| Backend       | Firebase Authentication + Cloud Firestore                    |
+| Estado global | Context API (`UserContext`, `CartContext`)                   |
+| Formularios   | React Hook Form + Zod                                        |
+| Listas        | `@shopify/flash-list`                                        |
+| Animaciones   | `react-native-reanimated` + `react-native-gesture-handler`   |
+| Hardware      | `expo-location`, `expo-image-picker`, `expo-secure-store`    |
+| Feedback      | `react-native-toast-message`                                 |
+| Testing       | Jest (`jest-expo`) + React Native Testing Library            |
+| Build y CI    | EAS Build + GitHub Actions                                   |
 
 ## Cómo correr el proyecto en desarrollo
 
@@ -110,26 +112,26 @@ Los perfiles `development`, `preview` y `production` están definidos en `eas.js
 - **Context API en vez de Zustand:** el estado global es chico (sesión y carrito) y Context alcanza sin agregar una dependencia. Para que no provoque renders de más, las funciones del carrito tienen referencia estable (`useCallback`) y las tarjetas de las listas usan `React.memo`.
 - **Capa de servicios + hooks:** las pantallas no conocen Firebase. Hablan con hooks (`useMedicamentos`, `useFarmacias`) que usan servicios (`firestoreMedicamentos`, `authService`), así que cambiar de backend no obliga a tocar la interfaz.
 - **Backend intercambiable (arquitectura agnóstica):** las pantallas hablan con hooks y los hooks con servicios que cumplen un contrato (`services/contratos.ts`); solo los archivos de servicio importan Firebase. Para comprobarlo hay una segunda implementación que consume una API REST con Axios (`services/restMedicamentos.ts` + `services/api.ts`): cambiando una sola línea de importación en `hooks/useMedicamentos.ts`, la Home muestra datos de la API sin modificar nada de la interfaz. Los interceptores de Axios adjuntan el token de sesión solo a nuestra propia API, nunca a servicios de terceros.
-- **Fotos en Cloudinary:** Firebase Storage exige plan Blaze, así que las fotos de los productos se suben a Cloudinary (plan gratuito, subida *unsigned* sin claves secretas) y en Firestore se guarda solo el link `https`. Así la foto que saca un integrante se ve en el celular de todos. La foto de la receta médica no se sube: queda local.
+- **Fotos en Cloudinary:** Firebase Storage exige plan Blaze, así que las fotos de los productos se suben a Cloudinary (plan gratuito, subida _unsigned_ sin claves secretas) y en Firestore se guarda solo el link `https`. Así la foto que saca un integrante se ve en el celular de todos. La foto de la receta médica no se sube: queda local.
 - **GPS en lugar de Firebase Storage:** desde 2026 Cloud Storage for Firebase exige una cuenta de facturación (plan Blaze). Para no depender de una tarjeta de crédito, la característica de hardware es la ubicación real, que además es el núcleo de la app.
 - **EAS Build:** el `.apk` se compila en la nube y las credenciales de Firebase viajan como variables de entorno de EAS, nunca en el repositorio.
 
 ## Desarrollo asistido por IA
 
-Usamos **Claude (Anthropic)** como programador de apoyo (*pair programming*) durante todo el cuatrimestre. Nuestro método: pegarle el error exacto junto con el stack (Expo SDK 57, React Native 0.86, Firebase, TypeScript) y pedirle primero la **causa raíz** y recién después el código. Todo lo que propuso lo validamos con `npx tsc --noEmit`, con los tests y probando en un celular real.
+Usamos **Claude (Anthropic)** como programador de apoyo (_pair programming_) durante todo el cuatrimestre. Nuestro método: pegarle el error exacto junto con el stack (Expo SDK 57, React Native 0.86, Firebase, TypeScript) y pedirle primero la **causa raíz** y recién después el código. Todo lo que propuso lo validamos con `npx tsc --noEmit`, con los tests y probando en un celular real.
 
 ### Desafíos que resolvimos con ayuda de la IA
 
-| Desafío | Qué se resolvió |
-|---|---|
-| **Salir de `mockData`** | Diseñar la capa de servicios y los hooks con `onSnapshot`, y rehacer el carrito para guardar el medicamento completo (antes buscaba por ID en un mock que dejó de existir). |
-| **Sesión y Auth Guard** | Evitar una condición de carrera entre el registro y `onAuthStateChanged`, y no montar ninguna pantalla hasta restaurar la sesión, para que Firestore no reciba pedidos sin autenticar. |
-| **Security Rules** | Pasar la propiedad de un producto del email al UID de Firebase y escribir reglas que impiden que un usuario edite o borre productos ajenos. Lo comprobamos con dos usuarios. |
-| **Tipos de formularios** | Resolver el error de TypeScript entre `z.coerce.number()` y React Hook Form usando `useForm<Entrada, any, Salida>`. |
-| **Rendimiento (60 fps)** | Memoizar tarjetas, estabilizar funciones con `useCallback` y migrar las listas a FlashList v2. |
-| **Animación** | Swipe-to-Delete con Reanimated 4 y Gesture Handler, usando `scheduleOnRN` (reemplaza a `runOnJS`) y pidiendo confirmación antes de borrar en Firestore. |
-| **Navegación** | Detectar por qué no aparecía la barra de pestañas (faltaba `_layout.tsx`) y por qué el header del detalle estaba oculto (`headerShown` heredado del layout raíz). |
-| **Tooling y entorno** | Disco lleno (`ENOSPC`), conflictos de dependencias (`ERESOLVE`), configuración de Jest con `jest-expo` y Testing Library v14 (API asíncrona), y variables de entorno en EAS. |
+| Desafío                  | Qué se resolvió                                                                                                                                                                        |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Salir de `mockData`**  | Diseñar la capa de servicios y los hooks con `onSnapshot`, y rehacer el carrito para guardar el medicamento completo (antes buscaba por ID en un mock que dejó de existir).            |
+| **Sesión y Auth Guard**  | Evitar una condición de carrera entre el registro y `onAuthStateChanged`, y no montar ninguna pantalla hasta restaurar la sesión, para que Firestore no reciba pedidos sin autenticar. |
+| **Security Rules**       | Pasar la propiedad de un producto del email al UID de Firebase y escribir reglas que impiden que un usuario edite o borre productos ajenos. Lo comprobamos con dos usuarios.           |
+| **Tipos de formularios** | Resolver el error de TypeScript entre `z.coerce.number()` y React Hook Form usando `useForm<Entrada, any, Salida>`.                                                                    |
+| **Rendimiento (60 fps)** | Memoizar tarjetas, estabilizar funciones con `useCallback` y migrar las listas a FlashList v2.                                                                                         |
+| **Animación**            | Swipe-to-Delete con Reanimated 4 y Gesture Handler, usando `scheduleOnRN` (reemplaza a `runOnJS`) y pidiendo confirmación antes de borrar en Firestore.                                |
+| **Navegación**           | Detectar por qué no aparecía la barra de pestañas (faltaba `_layout.tsx`) y por qué el header del detalle estaba oculto (`headerShown` heredado del layout raíz).                      |
+| **Tooling y entorno**    | Disco lleno (`ENOSPC`), conflictos de dependencias (`ERESOLVE`), configuración de Jest con `jest-expo` y Testing Library v14 (API asíncrona), y variables de entorno en EAS.           |
 
 ### Dónde la IA se equivocó y cómo lo detectamos
 
@@ -142,7 +144,7 @@ Usar IA no es copiar y pegar. Algunos errores que aparecieron y cómo se encontr
 
 ## Desarrollo guiado por especificaciones (SDD)
 
-Adoptamos **Spec-Driven Development** con la estructura de GitHub Spec Kit: primero se escribe *qué* y *por qué*, y recién después el código.
+Adoptamos **Spec-Driven Development** con la estructura de GitHub Spec Kit: primero se escribe _qué_ y _por qué_, y recién después el código.
 
 - `.specify/memory/constitution.md`: principios no negociables del proyecto (stack, arquitectura en capas, seguridad, calidad, diseño).
 - `specs/001-imagenes-medicamentos/`: primera funcionalidad documentada con el flujo completo `spec.md` → `plan.md` → `tasks.md`.
@@ -173,11 +175,11 @@ mapfarma/
 
 ## Paleta de colores
 
-| Color | Hex | Uso |
-|---|---|---|
-| Primario | `#01475D` | Headers, botones principales, textos |
-| Secundario | `#00D6BD` | Acentos, badges, precios |
-| Fondo tarjetas | `#E5CDF5` | Tarjetas e imágenes de producto |
-| Fondo app | `#F9F9F9` | Fondo general |
-| Confirmaciones | `#00BF00` | Estados positivos |
-| Errores | `#FF0000` | Errores y sin stock |
+| Color          | Hex       | Uso                                  |
+| -------------- | --------- | ------------------------------------ |
+| Primario       | `#01475D` | Headers, botones principales, textos |
+| Secundario     | `#00D6BD` | Acentos, badges, precios             |
+| Fondo tarjetas | `#E5CDF5` | Tarjetas e imágenes de producto      |
+| Fondo app      | `#F9F9F9` | Fondo general                        |
+| Confirmaciones | `#00BF00` | Estados positivos                    |
+| Errores        | `#FF0000` | Errores y sin stock                  |
