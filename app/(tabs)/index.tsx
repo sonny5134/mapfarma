@@ -1,4 +1,5 @@
 // app/(tabs)/index.tsx
+import { filtrarMedicamentos } from '../../utils/filtrarMedicamentos';
 import { useCallback, useMemo, useState } from 'react';
 import { View, Text, TextInput, FlatList, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -60,8 +61,9 @@ export default function HomeScreen() {
   // Si ya tenemos la ubicación real, reemplazamos la distancia mockeada por la
   // calculada de verdad (Haversine) entre el usuario y cada farmacia, y
   // reordenamos la lista de más cerca a más lejos.
+  // Sin ubicación real NO se muestra ninguna distancia (se descartan las de ejemplo).
   const farmaciasConDistancia = useMemo(() => {
-    if (!location) return farmacias;
+    if (!location) return farmacias.map((f) => ({ ...f, distanciaMetros: undefined }));
     return farmacias
       .map((f) => ({
         ...f,
@@ -71,11 +73,7 @@ export default function HomeScreen() {
   }, [farmacias, location]);
 
   const medicamentosFiltrados = useMemo(() => {
-    return medicamentos.filter((m) => {
-      const coincideCategoria = categoriaActiva === 'Todos' || m.categoria === categoriaActiva;
-      const coincideBusqueda = m.nombre.toLowerCase().includes(busqueda.toLowerCase());
-      return coincideCategoria && coincideBusqueda;
-    });
+    return filtrarMedicamentos(medicamentos, busqueda, categoriaActiva);
   }, [busqueda, categoriaActiva, medicamentos]);
 
   // useCallback: mantiene la MISMA referencia de función entre renders. Sin esto,

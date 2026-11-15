@@ -17,9 +17,9 @@ function FarmaciaCardBase({ farmacia }: Props) {
       style={styles.card}
       accessible
       accessibilityRole="summary"
-      accessibilityLabel={`${farmacia.nombre}, ${farmacia.enTurno ? 'en turno' : 'sin turno'}, a ${
-        farmacia.distanciaMetros
-      } metros, calificación ${farmacia.rating}, teléfono ${farmacia.telefono}`}
+      accessibilityLabel={`${farmacia.nombre}, ${farmacia.enTurno ? 'en turno' : 'sin turno'}, ${
+        farmacia.distanciaMetros === undefined ? '' : `a ${farmacia.distanciaMetros} metros, `
+      }calificación ${farmacia.rating}, teléfono ${farmacia.telefono}`}
     >
       <View style={styles.topRow}>
         <View style={[styles.badge, farmacia.enTurno ? styles.badgeOn : styles.badgeOff]}>
@@ -28,7 +28,7 @@ function FarmaciaCardBase({ farmacia }: Props) {
             {farmacia.enTurno ? 'EN TURNO' : 'SIN TURNO'}
           </Text>
         </View>
-        <Text style={styles.distancia}>{farmacia.distanciaMetros} m</Text>
+        {farmacia.distanciaMetros !== undefined && <Text style={styles.distancia}>{farmacia.distanciaMetros} m</Text>}
       </View>
 
       <View style={styles.middleRow}>
