@@ -1,5 +1,5 @@
 // contexts/CartContext.tsx
-import { createContext, useCallback, useContext, useState, ReactNode, useMemo } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
 import { Medicamento } from '../types';
 
 export interface CartLine {
@@ -76,6 +76,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [lines]
   );
   const requiereReceta = lines.some((l) => l.medicamento.requiereReceta);
+
+  // La receta pertenece a los medicamentos que la exigen: si el carrito ya no tiene ninguno
+  // (se eliminó o se restó hasta 0), se descarta la foto para que se vuelva a pedir.
+  useEffect(() => {
+    if (!requiereReceta && recetaImagenUri) setRecetaImagenUri(null);
+  }, [requiereReceta, recetaImagenUri]);
 
   return (
     <CartContext.Provider
