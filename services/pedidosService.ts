@@ -9,10 +9,23 @@ const COL = 'pedidos';
 
 export type NuevoPedido = Omit<Pedido, 'id'>;
 
+// Sin internet, Firestore NO falla: deja la escritura en cola y addDoc no responde hasta
+// recuperar la conexión. Por eso se pone un tiempo límite: pasado ese tiempo se avisa el error.
+export const TIEMPO_LIMITE_PEDIDO_MS = 10000;
+export const MENSAJE_SIN_CONEXION = 'Sin conexión. Revisá tu internet y volvé a intentar.';
+
 export const pedidosService = {
   create: async (pedido: NuevoPedido): Promise<string> => {
-    const ref = await addDoc(collection(db, COL), pedido);
-    return ref.id;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const limite = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(MENSAJE_SIN_CONEXION)), TIEMPO_LIMITE_PEDIDO_MS);
+    });
+    try {
+      const ref = await Promise.race([addDoc(collection(db, COL), pedido), limite]);
+      return ref.id;
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
   },
 
   // TIEMPO REAL: los pedidos de un usuario, del más nuevo al más viejo.
