@@ -62,7 +62,7 @@ function construirHtml(farmacias: Farmacia[], ubicacion: Props['ubicacion'], osc
     el.className = 'pop';
     var b = document.createElement('b'); b.textContent = p.nombre;
     var s = document.createElement('small');
-    s.textContent = p.direccion + ' · ' + p.distancia + ' m · ' + (p.enTurno ? 'EN TURNO' : 'SIN TURNO');
+    s.textContent = p.direccion + ' · ' + (p.distancia == null ? '' : p.distancia + ' m · ') + (p.enTurno ? 'EN TURNO' : 'SIN TURNO');
     el.appendChild(b); el.appendChild(document.createElement('br')); el.appendChild(s);
     m.bindPopup(el);
     bounds.push([p.lat, p.lng]);

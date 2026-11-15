@@ -9,7 +9,7 @@ export interface Farmacia {
   telefono: string;
   latitud: number;
   longitud: number;
-  distanciaMetros: number;
+  distanciaMetros?: number; // solo existe cuando hay ubicación real del usuario
   enTurno: boolean;
   horaCierreTurno?: string; // ej: "28h 10m" restantes, o timestamp según cómo lo calculen
   rating: number;
