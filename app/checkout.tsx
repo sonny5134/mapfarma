@@ -89,7 +89,15 @@ export default function CheckoutScreen() {
               <Text style={styles.resumenTitulo}>RESUMEN DEL PEDIDO</Text>
               {lines.map((line) => (
                 <View key={line.medicamento.id} style={styles.resumenRow}>
-                  <View style={styles.resumenImagePlaceholder} />
+                  <View style={styles.resumenImagePlaceholder}>
+                    {line.medicamento.imagenUrl ? (
+                      <Image
+                        source={{ uri: line.medicamento.imagenUrl }}
+                        style={styles.resumenImagen}
+                        resizeMode="cover"
+                      />
+                    ) : null}
+                  </View>
                   <Text style={styles.resumenNombre} numberOfLines={1}>
                     {line.medicamento.nombre}
                   </Text>
@@ -171,7 +179,8 @@ const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
   },
   resumenTitulo: { fontSize: FontSize.xs, fontFamily: FontFamily.bold, color: Colors.textMuted, marginBottom: Spacing.sm },
   resumenRow: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.sm },
-  resumenImagePlaceholder: { width: 28, height: 28, borderRadius: Radius.sm, backgroundColor: Colors.cardBg, marginRight: Spacing.sm },
+  resumenImagePlaceholder: { width: 36, height: 36, borderRadius: Radius.sm, backgroundColor: Colors.cardBg, marginRight: Spacing.sm, overflow: 'hidden' },
+  resumenImagen: { width: 36, height: 36 },
   resumenNombre: { flex: 1, fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: Colors.text },
   resumenCantidad: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, color: Colors.textMuted, marginRight: Spacing.sm },
   resumenPrecio: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: Colors.text },
