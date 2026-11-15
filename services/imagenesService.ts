@@ -33,14 +33,20 @@ function enviar(url: string, formData: FormData): Promise<{ ok: boolean; datos: 
 
 export const imagenesService = {
   /** Sube la foto local (file://...) y devuelve su URL https. Lanza un Error si falla. */
-  async subir(uriLocal: string): Promise<string> {
+  async subir(uriLocal: string, mimeType?: string | null, nombreArchivo?: string | null): Promise<string> {
     if (CLOUD_NAME === 'REEMPLAZAR_CON_TU_CLOUD_NAME') {
       throw new Error('Falta escribir el Cloud name de Cloudinary en services/imagenesService.ts.');
     }
 
     const formData = new FormData();
     // En React Native, un archivo se adjunta como { uri, type, name }
-    formData.append('file', { uri: uriLocal, type: 'image/jpeg', name: 'foto.jpg' } as any);
+    // Las fotos de la galería pueden ser PNG/WebP/HEIC; la cámara siempre da JPEG. Se usa el tipo
+    // y el nombre reales que informa el selector en vez de asumir 'image/jpeg' / 'foto.jpg'.
+    formData.append('file', {
+      uri: uriLocal,
+      type: mimeType || 'image/jpeg',
+      name: nombreArchivo || 'foto.jpg',
+    } as any);
     formData.append('upload_preset', UPLOAD_PRESET);
     formData.append('folder', 'mapfarma');
 

@@ -34,6 +34,7 @@ export default function PublicarScreen() {
   const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const { usuario } = useUser();
   const [imagenUri, setImagenUri] = useState<string | undefined>(undefined);
+  const [imagenMeta, setImagenMeta] = useState<{ mimeType?: string | null; fileName?: string | null }>();
   const [subiendoFoto, setSubiendoFoto] = useState(false);
 
   const {
@@ -65,13 +66,17 @@ export default function PublicarScreen() {
       return;
     }
 
+    // En la galería se desactiva el recorte (allowsEditing): en varios Android el editor de
+    // recorte falla o devuelve una ruta inválida para fotos que no son de la cámara.
     const resultado =
       fuente === 'camara'
         ? await ImagePicker.launchCameraAsync({ quality: 0.6, allowsEditing: true })
-        : await ImagePicker.launchImageLibraryAsync({ quality: 0.6, allowsEditing: true });
+        : await ImagePicker.launchImageLibraryAsync({ quality: 0.6, mediaTypes: ['images'] });
 
     if (!resultado.canceled && resultado.assets[0]) {
-      setImagenUri(resultado.assets[0].uri);
+      const asset = resultado.assets[0];
+      setImagenUri(asset.uri);
+      setImagenMeta({ mimeType: asset.mimeType, fileName: asset.fileName });
     }
   };
 
@@ -92,7 +97,7 @@ export default function PublicarScreen() {
       let imagenUrl: string | undefined;
       if (imagenUri) {
         setSubiendoFoto(true);
-        imagenUrl = await imagenesService.subir(imagenUri);
+        imagenUrl = await imagenesService.subir(imagenUri, imagenMeta?.mimeType, imagenMeta?.fileName);
       }
 
       await medicamentosService.create({
@@ -104,6 +109,7 @@ export default function PublicarScreen() {
       Toast.show({ type: 'success', text1: '¡Publicado!', text2: 'Ya aparece en Mis productos.' });
       reset();
       setImagenUri(undefined);
+      setImagenMeta(undefined);
       router.push('/(tabs)/perfil');
     } catch (err: any) {
       Toast.show({ type: 'error', text1: 'Error al guardar', text2: err.message });
