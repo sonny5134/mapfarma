@@ -227,6 +227,7 @@ const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
 
   emptyContainer: {
     flex: 1,
+    backgroundColor: Colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     padding: Spacing.lg,
