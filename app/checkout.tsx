@@ -152,7 +152,7 @@ const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   listContent: { padding: Spacing.lg },
 
-  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.lg },
+  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.lg, backgroundColor: Colors.background },
   emptyText: { fontSize: FontSize.md, fontFamily: FontFamily.regular, color: Colors.textMuted, marginBottom: Spacing.md },
   backButtonEmpty: { backgroundColor: Colors.primary, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, borderRadius: Radius.md },
   backButtonEmptyText: { color: Colors.white, fontFamily: FontFamily.bold },
