@@ -14,6 +14,7 @@ import { medicamentosService } from '../../services/firestoreMedicamentos';
 import { ProductoSwipeable } from '../../components/ProductoSwipeable';
 import { Medicamento } from '../../types';
 import { SelectorTema } from '../../components/SelectorTema';
+import { puedePublicar } from '../../utils/permisos';
 
 export default function PerfilScreen() {
   const { colors: Colors } = useTheme();
@@ -112,36 +113,40 @@ export default function PerfilScreen() {
       {/* Modo claro / oscuro / automático */}
       <SelectorTema />
 
-      {/* Mis productos */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>MIS PRODUCTOS ({misProductos.length})</Text>
-        <Pressable
-          onPress={() => router.push('/(tabs)/publicar')}
-          accessibilityRole="button"
-          accessibilityLabel="Agregar un medicamento nuevo"
-        >
-          <Text style={styles.sectionAction}>+ Agregar</Text>
-        </Pressable>
-      </View>
-
-      {misProductos.length === 0 ? (
-        <View style={styles.emptyBox}>
-          <Text style={styles.emptyBoxText}>Todavía no publicaste ningún medicamento.</Text>
-          <Pressable style={styles.primaryButton} onPress={() => router.push('/(tabs)/publicar')}>
-            <Text style={styles.primaryButtonText}>Publicar medicamento</Text>
+      {/* Mis productos: solo para Desarrolladores */}
+      {puedePublicar(usuario.rol) && (
+        <>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>MIS PRODUCTOS ({misProductos.length})</Text>
+          <Pressable
+            onPress={() => router.push('/(tabs)/publicar')}
+            accessibilityRole="button"
+            accessibilityLabel="Agregar un medicamento nuevo"
+          >
+            <Text style={styles.sectionAction}>+ Agregar</Text>
           </Pressable>
         </View>
-      ) : (
-        <View style={styles.productosListContainer}>
-          {misProductos.map((producto) => (
-            <ProductoSwipeable
-              key={producto.id}
-              producto={producto}
-              onPress={handleVerProducto}
-              onDelete={handleEliminarProducto}
-            />
-          ))}
-        </View>
+
+        {misProductos.length === 0 ? (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyBoxText}>Todavía no publicaste ningún medicamento.</Text>
+            <Pressable style={styles.primaryButton} onPress={() => router.push('/(tabs)/publicar')}>
+              <Text style={styles.primaryButtonText}>Publicar medicamento</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.productosListContainer}>
+            {misProductos.map((producto) => (
+              <ProductoSwipeable
+                key={producto.id}
+                producto={producto}
+                onPress={handleVerProducto}
+                onDelete={handleEliminarProducto}
+              />
+            ))}
+          </View>
+        )}
+        </>
       )}
 
       {/* Historial de pedidos */}

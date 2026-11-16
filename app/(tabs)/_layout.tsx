@@ -4,10 +4,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { FontFamily } from '../../constants/theme';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useCart } from '../../contexts/CartContext';
+import { useUser } from '../../contexts/UserContext';
+import { puedePublicar } from '../../utils/permisos';
 
 export default function TabsLayout() {
   const { cartCount } = useCart();
   const { colors: Colors } = useTheme();
+  const { usuario } = useUser();
   // La protección por sesión (Auth Guard) ahora vive en app/_layout.tsx
 
   return (
@@ -33,6 +36,8 @@ export default function TabsLayout() {
         name="publicar"
         options={{
           title: 'Publicar',
+          // Solo los Desarrolladores ven la pestaña (href: null la oculta de la barra)
+          href: puedePublicar(usuario?.rol) ? undefined : null,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="add-circle-outline" size={size} color={color as string} />
           ),
