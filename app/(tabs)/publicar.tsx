@@ -21,6 +21,8 @@ import Toast from 'react-native-toast-message';
 import { Spacing, FontSize, Radius, FontFamily, ThemeColors } from '../../constants/theme';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useUser } from '../../contexts/UserContext';
+import { puedePublicar } from '../../utils/permisos';
+import { SoloDesarrolladores } from '../../components/SoloDesarrolladores';
 import { medicamentosService } from '../../services/firestoreMedicamentos';
 import { imagenesService } from '../../services/imagenesService';
 import { medicamentoSchema, MedicamentoForm, MedicamentoInput } from '../../schemas/medicamentoSchema';
@@ -29,7 +31,7 @@ import { CategoriaMedicamento } from '../../types';
 
 const categorias: CategoriaMedicamento[] = ['Analgésicos', 'Antibióticos', 'Antialérgicos', 'Gastro', 'Otros'];
 
-export default function PublicarScreen() {
+function PublicarForm() {
   const { colors: Colors } = useTheme();
   const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const { usuario } = useUser();
@@ -221,6 +223,13 @@ export default function PublicarScreen() {
       </ScrollView>
     </KeyboardAvoidingView>
   );
+}
+
+export default function PublicarScreen() {
+  const { usuario } = useUser();
+  // Defensa extra: aunque la pestaña esté oculta, la pantalla también valida el rol
+  if (!puedePublicar(usuario?.rol)) return <SoloDesarrolladores />;
+  return <PublicarForm />;
 }
 
 const makeStyles = (Colors: ThemeColors) => StyleSheet.create({

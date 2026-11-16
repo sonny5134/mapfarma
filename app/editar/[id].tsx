@@ -11,8 +11,11 @@ import { InputField } from '../../components/ui/InputField';
 import { medicamentoSchema, MedicamentoForm, MedicamentoInput } from '../../schemas/medicamentoSchema';
 import { medicamentosService } from '../../services/firestoreMedicamentos';
 import { useMedicamento } from '../../hooks/useMedicamento';
+import { useUser } from '../../contexts/UserContext';
+import { puedePublicar } from '../../utils/permisos';
+import { SoloDesarrolladores } from '../../components/SoloDesarrolladores';
 
-export default function EditarMedicamentoScreen() {
+function EditarMedicamentoForm() {
   const { colors: Colors } = useTheme();
   const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -102,6 +105,12 @@ export default function EditarMedicamentoScreen() {
       </KeyboardAvoidingView>
     </>
   );
+}
+
+export default function EditarMedicamentoScreen() {
+  const { usuario } = useUser();
+  if (!puedePublicar(usuario?.rol)) return <SoloDesarrolladores />;
+  return <EditarMedicamentoForm />;
 }
 
 const makeStyles = (Colors: ThemeColors) => StyleSheet.create({

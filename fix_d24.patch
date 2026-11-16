@@ -1,0 +1,302 @@
+From fd93aad0cbaea797fe6455bc7c4eecdefec4e02a Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Mon, 16 Nov 2026 16:03:38 +0000
+Subject: [PATCH] Fix D-24: solo los Desarrolladores pueden publicar y editar
+ medicamentos
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Oculta la pestaña Publicar y la sección Mis productos para quien no tenga
+rol Desarrollador, valida el rol en las pantallas publicar y editar, y
+exige el rol en las reglas de Firestore al crear medicamentos.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01YUM6o9YkXcKnehdmFJ2U4u
+---
+ __tests__/permisos.test.ts         | 21 ++++++++++
+ app/(tabs)/_layout.tsx             |  5 +++
+ app/(tabs)/perfil.tsx              | 61 ++++++++++++++++--------------
+ app/(tabs)/publicar.tsx            | 11 +++++-
+ app/editar/[id].tsx                | 11 +++++-
+ components/SoloDesarrolladores.tsx | 26 +++++++++++++
+ firestore.rules                    | 10 ++++-
+ utils/permisos.ts                  |  6 +++
+ 8 files changed, 119 insertions(+), 32 deletions(-)
+ create mode 100644 __tests__/permisos.test.ts
+ create mode 100644 components/SoloDesarrolladores.tsx
+ create mode 100644 utils/permisos.ts
+
+diff --git a/__tests__/permisos.test.ts b/__tests__/permisos.test.ts
+new file mode 100644
+index 0000000..e74671d
+--- /dev/null
++++ b/__tests__/permisos.test.ts
+@@ -0,0 +1,21 @@
++import { puedePublicar } from '../utils/permisos';
++
++describe('puedePublicar (RF-006, RF-015, RF-019)', () => {
++  it('permite publicar solo al rol Desarrollador', () => {
++    expect(puedePublicar('Desarrollador')).toBe(true);
++  });
++
++  it('no permite publicar a un Cliente', () => {
++    expect(puedePublicar('Cliente')).toBe(false);
++  });
++
++  it('no permite publicar a los otros roles del equipo', () => {
++    expect(puedePublicar('Diseñador')).toBe(false);
++    expect(puedePublicar('Líder de proyecto')).toBe(false);
++  });
++
++  it('no permite publicar sin rol definido', () => {
++    expect(puedePublicar(undefined)).toBe(false);
++    expect(puedePublicar(null)).toBe(false);
++  });
++});
+diff --git a/app/(tabs)/_layout.tsx b/app/(tabs)/_layout.tsx
+index 9b8b85e..a31b2b7 100644
+--- a/app/(tabs)/_layout.tsx
++++ b/app/(tabs)/_layout.tsx
+@@ -4,10 +4,13 @@ import { Ionicons } from '@expo/vector-icons';
+ import { FontFamily } from '../../constants/theme';
+ import { useTheme } from '../../contexts/ThemeContext';
+ import { useCart } from '../../contexts/CartContext';
++import { useUser } from '../../contexts/UserContext';
++import { puedePublicar } from '../../utils/permisos';
+ 
+ export default function TabsLayout() {
+   const { cartCount } = useCart();
+   const { colors: Colors } = useTheme();
++  const { usuario } = useUser();
+   // La protección por sesión (Auth Guard) ahora vive en app/_layout.tsx
+ 
+   return (
+@@ -33,6 +36,8 @@ export default function TabsLayout() {
+         name="publicar"
+         options={{
+           title: 'Publicar',
++          // Solo los Desarrolladores ven la pestaña (href: null la oculta de la barra)
++          href: puedePublicar(usuario?.rol) ? undefined : null,
+           tabBarIcon: ({ color, size }) => (
+             <Ionicons name="add-circle-outline" size={size} color={color as string} />
+           ),
+diff --git a/app/(tabs)/perfil.tsx b/app/(tabs)/perfil.tsx
+index ad8b523..60c7280 100644
+--- a/app/(tabs)/perfil.tsx
++++ b/app/(tabs)/perfil.tsx
+@@ -14,6 +14,7 @@ import { medicamentosService } from '../../services/firestoreMedicamentos';
+ import { ProductoSwipeable } from '../../components/ProductoSwipeable';
+ import { Medicamento } from '../../types';
+ import { SelectorTema } from '../../components/SelectorTema';
++import { puedePublicar } from '../../utils/permisos';
+ 
+ export default function PerfilScreen() {
+   const { colors: Colors } = useTheme();
+@@ -112,36 +113,40 @@ export default function PerfilScreen() {
+       {/* Modo claro / oscuro / automático */}
+       <SelectorTema />
+ 
+-      {/* Mis productos */}
+-      <View style={styles.sectionHeader}>
+-        <Text style={styles.sectionTitle}>MIS PRODUCTOS ({misProductos.length})</Text>
+-        <Pressable
+-          onPress={() => router.push('/(tabs)/publicar')}
+-          accessibilityRole="button"
+-          accessibilityLabel="Agregar un medicamento nuevo"
+-        >
+-          <Text style={styles.sectionAction}>+ Agregar</Text>
+-        </Pressable>
+-      </View>
+-
+-      {misProductos.length === 0 ? (
+-        <View style={styles.emptyBox}>
+-          <Text style={styles.emptyBoxText}>Todavía no publicaste ningún medicamento.</Text>
+-          <Pressable style={styles.primaryButton} onPress={() => router.push('/(tabs)/publicar')}>
+-            <Text style={styles.primaryButtonText}>Publicar medicamento</Text>
++      {/* Mis productos: solo para Desarrolladores */}
++      {puedePublicar(usuario.rol) && (
++        <>
++        <View style={styles.sectionHeader}>
++          <Text style={styles.sectionTitle}>MIS PRODUCTOS ({misProductos.length})</Text>
++          <Pressable
++            onPress={() => router.push('/(tabs)/publicar')}
++            accessibilityRole="button"
++            accessibilityLabel="Agregar un medicamento nuevo"
++          >
++            <Text style={styles.sectionAction}>+ Agregar</Text>
+           </Pressable>
+         </View>
+-      ) : (
+-        <View style={styles.productosListContainer}>
+-          {misProductos.map((producto) => (
+-            <ProductoSwipeable
+-              key={producto.id}
+-              producto={producto}
+-              onPress={handleVerProducto}
+-              onDelete={handleEliminarProducto}
+-            />
+-          ))}
+-        </View>
++
++        {misProductos.length === 0 ? (
++          <View style={styles.emptyBox}>
++            <Text style={styles.emptyBoxText}>Todavía no publicaste ningún medicamento.</Text>
++            <Pressable style={styles.primaryButton} onPress={() => router.push('/(tabs)/publicar')}>
++              <Text style={styles.primaryButtonText}>Publicar medicamento</Text>
++            </Pressable>
++          </View>
++        ) : (
++          <View style={styles.productosListContainer}>
++            {misProductos.map((producto) => (
++              <ProductoSwipeable
++                key={producto.id}
++                producto={producto}
++                onPress={handleVerProducto}
++                onDelete={handleEliminarProducto}
++              />
++            ))}
++          </View>
++        )}
++        </>
+       )}
+ 
+       {/* Historial de pedidos */}
+diff --git a/app/(tabs)/publicar.tsx b/app/(tabs)/publicar.tsx
+index f4fb968..6a3096e 100644
+--- a/app/(tabs)/publicar.tsx
++++ b/app/(tabs)/publicar.tsx
+@@ -21,6 +21,8 @@ import Toast from 'react-native-toast-message';
+ import { Spacing, FontSize, Radius, FontFamily, ThemeColors } from '../../constants/theme';
+ import { useTheme } from '../../contexts/ThemeContext';
+ import { useUser } from '../../contexts/UserContext';
++import { puedePublicar } from '../../utils/permisos';
++import { SoloDesarrolladores } from '../../components/SoloDesarrolladores';
+ import { medicamentosService } from '../../services/firestoreMedicamentos';
+ import { imagenesService } from '../../services/imagenesService';
+ import { medicamentoSchema, MedicamentoForm, MedicamentoInput } from '../../schemas/medicamentoSchema';
+@@ -29,7 +31,7 @@ import { CategoriaMedicamento } from '../../types';
+ 
+ const categorias: CategoriaMedicamento[] = ['Analgésicos', 'Antibióticos', 'Antialérgicos', 'Gastro', 'Otros'];
+ 
+-export default function PublicarScreen() {
++function PublicarForm() {
+   const { colors: Colors } = useTheme();
+   const styles = useMemo(() => makeStyles(Colors), [Colors]);
+   const { usuario } = useUser();
+@@ -223,6 +225,13 @@ export default function PublicarScreen() {
+   );
+ }
+ 
++export default function PublicarScreen() {
++  const { usuario } = useUser();
++  // Defensa extra: aunque la pestaña esté oculta, la pantalla también valida el rol
++  if (!puedePublicar(usuario?.rol)) return <SoloDesarrolladores />;
++  return <PublicarForm />;
++}
++
+ const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
+   flex: { flex: 1 },
+   container: { flex: 1, backgroundColor: Colors.background },
+diff --git a/app/editar/[id].tsx b/app/editar/[id].tsx
+index 1433f34..de097fc 100644
+--- a/app/editar/[id].tsx
++++ b/app/editar/[id].tsx
+@@ -11,8 +11,11 @@ import { InputField } from '../../components/ui/InputField';
+ import { medicamentoSchema, MedicamentoForm, MedicamentoInput } from '../../schemas/medicamentoSchema';
+ import { medicamentosService } from '../../services/firestoreMedicamentos';
+ import { useMedicamento } from '../../hooks/useMedicamento';
++import { useUser } from '../../contexts/UserContext';
++import { puedePublicar } from '../../utils/permisos';
++import { SoloDesarrolladores } from '../../components/SoloDesarrolladores';
+ 
+-export default function EditarMedicamentoScreen() {
++function EditarMedicamentoForm() {
+   const { colors: Colors } = useTheme();
+   const styles = useMemo(() => makeStyles(Colors), [Colors]);
+   const { id } = useLocalSearchParams<{ id: string }>();
+@@ -104,6 +107,12 @@ export default function EditarMedicamentoScreen() {
+   );
+ }
+ 
++export default function EditarMedicamentoScreen() {
++  const { usuario } = useUser();
++  if (!puedePublicar(usuario?.rol)) return <SoloDesarrolladores />;
++  return <EditarMedicamentoForm />;
++}
++
+ const makeStyles = (Colors: ThemeColors) => StyleSheet.create({
+   flex: { flex: 1 },
+   container: { flex: 1, backgroundColor: Colors.background },
+diff --git a/components/SoloDesarrolladores.tsx b/components/SoloDesarrolladores.tsx
+new file mode 100644
+index 0000000..547ec8d
+--- /dev/null
++++ b/components/SoloDesarrolladores.tsx
+@@ -0,0 +1,26 @@
++// components/SoloDesarrolladores.tsx
++import { useMemo } from 'react';
++import { View, Text, StyleSheet } from 'react-native';
++import { Ionicons } from '@expo/vector-icons';
++import { Spacing, FontSize, FontFamily, ThemeColors } from '../constants/theme';
++import { useTheme } from '../contexts/ThemeContext';
++
++// Aviso que se muestra si alguien sin rol Desarrollador llega a una pantalla de publicación.
++export function SoloDesarrolladores() {
++  const { colors: Colors } = useTheme();
++  const styles = useMemo(() => makeStyles(Colors), [Colors]);
++  return (
++    <View style={styles.container} accessibilityRole="alert">
++      <Ionicons name="lock-closed-outline" size={40} color={Colors.textMuted as string} />
++      <Text style={styles.title}>Solo para desarrolladores</Text>
++      <Text style={styles.text}>Tu cuenta es de Cliente: podés buscar medicamentos y hacer pedidos, pero no publicarlos.</Text>
++    </View>
++  );
++}
++
++const makeStyles = (Colors: ThemeColors) =>
++  StyleSheet.create({
++    container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xl, backgroundColor: Colors.background },
++    title: { marginTop: Spacing.md, fontSize: FontSize.lg, fontFamily: FontFamily.bold, color: Colors.text },
++    text: { marginTop: Spacing.sm, textAlign: 'center', fontSize: FontSize.md, fontFamily: FontFamily.regular, color: Colors.textMuted },
++  });
+diff --git a/firestore.rules b/firestore.rules
+index 0e1b122..1133ab9 100644
+--- a/firestore.rules
++++ b/firestore.rules
+@@ -8,12 +8,18 @@ service cloud.firestore {
+       allow write: if false;
+     }
+ 
+-    // Medicamentos: leer con sesión; crear solo a nombre propio;
++    // Solo el rol Desarrollador (campo "rol" de usuarios/{uid}) puede publicar medicamentos.
++    function esDesarrollador() {
++      return request.auth != null
++        && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.get('rol', 'Cliente') == 'Desarrollador';
++    }
++
++    // Medicamentos: leer con sesión; crear solo un Desarrollador y a nombre propio;
+     // modificar o borrar SOLO el dueño original (userId == UID de quien pide).
+     match /medicamentos/{medicamentoId} {
+       allow read: if request.auth != null;
+ 
+-      allow create: if request.auth != null
++      allow create: if esDesarrollador()
+                     && request.resource.data.userId == request.auth.uid;
+ 
+       allow update: if request.auth != null
+diff --git a/utils/permisos.ts b/utils/permisos.ts
+new file mode 100644
+index 0000000..30f4825
+--- /dev/null
++++ b/utils/permisos.ts
+@@ -0,0 +1,6 @@
++// utils/permisos.ts
++import { Rol } from '../types';
++
++// Solo el rol Desarrollador puede publicar, editar y administrar medicamentos (RF-015, RF-019).
++// Clientes, y cualquier rol sin definir, solo consultan el catálogo y compran.
++export const puedePublicar = (rol?: Rol | null): boolean => rol === 'Desarrollador';
+-- 
+2.43.0
+

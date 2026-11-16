@@ -8,12 +8,18 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Medicamentos: leer con sesión; crear solo a nombre propio;
+    // Solo el rol Desarrollador (campo "rol" de usuarios/{uid}) puede publicar medicamentos.
+    function esDesarrollador() {
+      return request.auth != null
+        && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.get('rol', 'Cliente') == 'Desarrollador';
+    }
+
+    // Medicamentos: leer con sesión; crear solo un Desarrollador y a nombre propio;
     // modificar o borrar SOLO el dueño original (userId == UID de quien pide).
     match /medicamentos/{medicamentoId} {
       allow read: if request.auth != null;
 
-      allow create: if request.auth != null
+      allow create: if esDesarrollador()
                     && request.resource.data.userId == request.auth.uid;
 
       allow update: if request.auth != null
